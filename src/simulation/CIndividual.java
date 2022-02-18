@@ -5,6 +5,7 @@ public class CIndividual {
 	char[] chrom; // 染色体。長さは対戦履歴の長さに応じて決まる
 	char[] memRec; // 対戦履歴。長さはCConst で決められた回数ｘ2
 	int adr; // 履歴が示す染色体上の位置
+	char myChoice; //履歴が示す染色体上の位置にある行動を選択する。
 	// 利得関係
 	double payoff, scaledPayoff, cumPayoff, avePayoff;
 	// ゲームカウント。個体によってゲーム回数が異なるので
@@ -19,13 +20,15 @@ public class CIndividual {
 		for (int i = 0; i < memRec.length; i++) {
 			this.memRec[i] = this.chrom[i];
 		}
-		// 記憶が指し示す染色体上のアドレス
+		// 記憶が指し示す染色体上のアドレス 0から数えるので、配列のアドレスになる（ビットを数えるときに注意）
 		String tmp = new String(this.memRec);
 		this.adr = Integer.parseInt(tmp, 2);
+		//そのアドレスにある行動（0:協力'C', 1：裏切り'D'）
+		this.myChoice = this.chrom[this.adr];
 		// 利得関係初期化
 		payoff = scaledPayoff = cumPayoff = avePayoff = 0.0;
 	}// end of constructor
-		// 各種メソッド
+		
 
 	// setter
 	public void setPayoff(double p) {
@@ -37,7 +40,6 @@ public class CIndividual {
 	public int getAdr() {
 		return this.adr;
 	}
-
 	public char[] getChrom() {
 		return this.chrom;
 	}
@@ -45,7 +47,41 @@ public class CIndividual {
 	public char[] getMemory() {
 		return this.memRec;
 	}
-
+	public double getPayoff() {
+		return this.payoff;
+	}
+	public char getChoice() {
+		return this.myChoice;
+	}
+	//
+	// 対戦履歴の更新。一回の対戦ごとに更新される。受け入れるのは対戦相手のchoice
+	public void reMem(char in) {
+		// 記憶領域のビット長
+		int L = this.memRec.length;
+		char[] tmp = new char[L];
+		// はじめに最初の2ビットを捨てて、以降を詰める
+		for (int i = 0; i < tmp.length - 2; i++) {
+			tmp[i] = this.memRec[2 + i];
+		}
+		// 終わりから2ビット目 [L-2] は自分が出した choice である。
+		tmp[L - 2] = this.getChoice();
+		// 最後のビットは in である。
+		tmp[L - 1] = in;
+		// tmp で memRec を更新する。
+		for (int i = 0; i < L; i++) {
+			this.memRec[i] = tmp[i];
+		}
+		// 記憶が更新されたら染色体自体が更新される。
+		// 染色体の先頭 L ビットが対戦履歴に置き換わる。
+		for (int i = 0; i < L; i++) {
+			this.chrom[i] = this.memRec[i];
+		}
+		//記憶が更新されたら、adr が変わり、 myChoice が変わる。
+		//記憶の更新（ゲームのプレイ）がトリガーになるということだ。
+		String str= new String(this.memRec);
+		this.adr = Integer.parseInt(str, 2);
+		this.myChoice = this.chrom[this.adr];
+	}
 	// 文字列初期化
 	public void initBinary(char[] in) {
 		double d;
@@ -59,4 +95,6 @@ public class CIndividual {
 		} // end of for
 	} // end of void initBinary()
 		//
+
+	
 }
