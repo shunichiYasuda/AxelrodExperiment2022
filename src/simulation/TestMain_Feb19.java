@@ -1,27 +1,32 @@
 package simulation;
 
-public class TestMain_Feb18 {
+public class TestMain_Feb19 {
 	static CPopulation pop;
 	static final int POPSIZE = 20;
 
 	public static void main(String[] args) {
 		// 集団の生成
 		pop = new CPopulation(POPSIZE);
-		//総当たり戦
+		// 総当たり戦
 		int p1 = 0;
-		while(p1<POPSIZE-1) {
-			for(int m=(p1+1);m<POPSIZE;m++) {
+		while (p1 < POPSIZE - 1) {
+			for (int m = (p1 + 1); m < POPSIZE; m++) {
 				int p2 = m;
-				//対戦するのは p1とp2である。
-				//ゲームを複数回行う。
-				//情報を確認
-				//System.out.println("個体番号："+p1+","+p2);
-				game(p1,p2);
+				game(p1, p2);
 			}
 			p1++;
 		}
-		//総当たり戦が終わったので全体の累積利得を確認する
-		
+
+		// 集団の平均利得等統計値を計算する。
+		pop.calcStat();
+		// また、スケーリングを行う
+		pop.scaling();
+		// 総当たり戦およびスケーリングが終わったので確認する
+		for (CIndividual m : pop.member) {
+			System.out.println(m.getAvePayoff());
+			System.out.println(m.getScaledPayoff());
+		}
+
 	}
 
 	//
@@ -31,14 +36,7 @@ public class TestMain_Feb18 {
 		// ゲームで記憶が更新されるたびに adr も choice も更新されている。
 		char select_p1 = pop.member[p1].getChoice();
 		char select_p2 = pop.member[p2].getChoice();
-		//情報の確認
-		/*
-		 * System.out.println("("+ p1 +","+p2+")="+"("+select_p1+", "+select_p2+")");
-		 * System.out.println("memory before game:"); System.out.print(p1+":");
-		 * printRec(pop.member[p1].getMemory()); System.out.print("\t"+p2+":");
-		 * printRec(pop.member[p2].getMemory());
-		 */
-		
+
 		// C は 0, Dは 1 いずれchar である。
 		if (select_p1 == '0' && select_p2 == '0') {
 			pop.member[p1].setPayoff(3.0);
@@ -56,21 +54,12 @@ public class TestMain_Feb18 {
 			pop.member[p1].setPayoff(1.0);
 			pop.member[p2].setPayoff(1.0);
 		}
-		//チェック
-		//double payoff_p1 = pop.member[p1].getPayoff();
-		//double payoff_p2 = pop.member[p2].getPayoff();
-		//System.out.println("player"+p1+"="+payoff_p1+"\tplayer"+p2+"="+payoff_p2);
 		pop.member[p1].reMem(select_p2);
 		pop.member[p2].reMem(select_p1);
-		//
-		/*
-		 * System.out.println("\nmemory after game:"); System.out.print(p1+":");
-		 * printRec(pop.member[p1].getMemory()); System.out.print("\t"+p2+":");
-		 * printRec(pop.member[p2].getMemory()); System.out.println("");
-		 */
-		// ゲームカウントを増やす
-		pop.member[p1].gameCount++;
-		pop.member[p2].gameCount++;
+		// ゲームカウントを増やす（修正：Feb19 2022 ）
+		// 下ゲームカウントはsetPayoff が呼ばれた際にその中でカウントが増える
+		// pop.member[p1].gameCount++;
+		// pop.member[p2].gameCount++;
 	}// end of game()
 		// 支援メソッド
 

@@ -32,8 +32,12 @@ public class CIndividual {
 
 	// setter
 	public void setPayoff(double p) {
+		//ゲームの利得がはいってくる、ということはゲームが1回終わったということなので
+		//このメソッドの中でgameCount をすすめ、平均利得も計算しておく
+		this.gameCount++;
 		this.payoff = p;
 		this.cumPayoff += p;
+		this.avePayoff = cumPayoff / gameCount;
 	}
 
 	// getter
@@ -49,6 +53,15 @@ public class CIndividual {
 	}
 	public double getPayoff() {
 		return this.payoff;
+	}
+	public double getCumPayoff() {
+		return this.cumPayoff;
+	}
+	public double getAvePayoff() {
+		return this.avePayoff;
+	}
+	public double getScaledPayoff() {
+		return this.scaledPayoff;
 	}
 	public char getChoice() {
 		return this.myChoice;

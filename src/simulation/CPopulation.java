@@ -20,16 +20,18 @@ public class CPopulation {
 
 	// 統計値計算：平均
 	public void calcStat() {
+		//集団の平均利得を考える場合、「個体の利得」としてどれを使うのかを考えなければならない。
+		//ゲームは複数回数行われるのだから、やはり平均利得が適切である。
 		// 平均
 		double sum = 0.0;
 		for (int i = 0; i < this.popSize; i++) {
-			sum += this.member[i].getPayoff();
+			sum += this.member[i].getAvePayoff();
 		}
 		this.mAve = sum / this.popSize;
 		// 分散
 		sum = 0.0;
 		for (int i = 0; i < this.popSize; i++) {
-			double v = (this.member[i].getPayoff() - this.mAve);
+			double v = (this.member[i].getAvePayoff() - this.mAve);
 			sum += v * v;
 		}
 		this.mDev = sum / (this.popSize); // 標本分散で良い
@@ -38,15 +40,15 @@ public class CPopulation {
 		double max = 0.0;
 		double min = 0.0;
 		mMaxID = 0;
-		max = this.member[0].getPayoff();
-		min = this.member[0].getPayoff();
+		max = this.member[0].getAvePayoff();
+		min = this.member[0].getAvePayoff();
 		for (int i = 1; i < this.popSize; i++) {
-			if (max < this.member[i].getPayoff()) {
-				max = this.member[i].getPayoff();
+			if (max < this.member[i].getAvePayoff()) {
+				max = this.member[i].getAvePayoff();
 				mMaxID = i;
 			}
-			if (min > this.member[i].getPayoff())
-				min = this.member[i].getPayoff();
+			if (min > this.member[i].getAvePayoff())
+				min = this.member[i].getAvePayoff();
 		}
 		this.mMax = max;
 		this.mMin = min;
@@ -67,9 +69,10 @@ public class CPopulation {
 		}
 		// 以上で線形スケーリングの係数が決定した。
 		// 以下でスケーリングを行い、数値を個体に格納する。
+		//ここでも個体の「利得」は平均利得を用いる
 		delta = 0.0;// 使い回す
 		for (int m = 0; m < this.popSize; m++) {
-			double payoff = this.member[m].getPayoff();
+			double payoff = this.member[m].getAvePayoff();
 			this.member[m].scaledPayoff = a * payoff + b;
 		}
 	} // end of スケーリング
