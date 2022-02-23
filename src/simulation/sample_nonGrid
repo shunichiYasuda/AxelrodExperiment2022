@@ -1,0 +1,987 @@
+//package GA_with_structure;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
+public class nonTorusGrid {
+	// 空間構造をもったGAシミュレーション。これまでのプログラムをベースにして空間構造を与える
+	// 有効桁数（小数点以下）を設定
+
+	static CIndividual[] pop;
+	static String dateName;// ファイルの先頭に付加する日時
+	static String timeStamp; // 実験記録につける日時秒。
+	static File aveFile, gTypeFile, statFile, gameAreaCountFile, matingAreaCountFile;
+	static File matingAreaPayoff, matingAreaNumber; // 交配領域での個体数と領域内での平均利得
+	static PrintWriter pwAve, pwGType, pwStat, pwGACount, pwMACount;
+	static PrintWriter pwAreaPayoff, pwAreaNumber;
+	// 平均値を記録する2次元配列
+	static double[][] aveTable;
+	// loop の回数。main 以外でも必要なので
+	static int wholeCount;
+	// 交配領域での個体数と領域内での平均利得を記録する場合には true
+	static boolean areaCheck = true;
+	// ゲーム領域を区分しないなら true , 区分するなら false
+	static boolean noGrid = false;
+
+	public static void main(String[] args) {
+		// 収束判定のため10回分記録をとる
+		final int checkTerm = 10;
+		char[] Q = new char[checkTerm];
+
+		int checkCount = 6; // 10回の内6回協力を収束と定義
+		final double coopValue = 2.76;
+		final double defectValue = 1.54;
+		// 集団が協力を達成したかどうか状況を示すフラグ：収束なし N ,裏切り D, 協力 C
+		char stateFlag = 'N';
+		// 集団の状態記録。協力状態、裏切り状態、どちらでもなし
+		char[] popState = new char[CConst.GEN];
+		// 集団の状態記録を EXP分保存するテーブル
+		char[][] popStateTable = new char[CConst.GEN][CConst.EXP];
+		// 集団が協力へ収束したかどうかを判定するフラグ。このフラグが立っている実験を
+		// 収束実験と判定してさまざまな状況を記録する。
+		boolean convergeFlag = false;
+		// 実験日時
+		makeDate();
+		makeFiles();
+		// 一時的な平均値の記録
+		double[] tmpAve = new double[CConst.GEN];
+		// 一時的な染色体の記録.chrom16はString なので工夫が必要
+		String[] tmpGType = new String[CConst.GEN];
+		// 平均値2次元配列生成と初期化
+		aveTable = new double[CConst.GEN][CConst.EXP];
+		for (int i = 0; i < aveTable.length; i++) {
+			for (int j = 0; j < aveTable[0].length; j++) {
+				aveTable[i][j] = 0.0;
+			}
+		} // end of for(i=0;i<aveTable.length.....
+			// GType ファイルの最初の2行を書いておく
+		pwGType.println("#HEXSIZE\tMEMBER\tGEN\tLOOP");
+		pwGType.println(CConst.HEXSIZE + "\t" + CConst.numOfMember + "\t" + CConst.GEN + "\t" + CConst.EXP);
+		// ファイルは必ず作る
+		pwAreaPayoff.println("#AREASIZE\tGEN\tLOOP");
+
+		pwAreaNumber.println("#AREASIZE\tGEN\tLOOP");
+
+		// 個体を100以上つくることが必要であるが、これまでのようにCPopulation にまとめることができない。
+		// 0.0-1.0 の数値をグリッドに分割するため、分割数をあたえて、境界値をつくる。
+		double[] borderArray;
+		int borderNumber = 2;
+
+		double interval = 1.0 / (double) borderNumber;
+		interval = CConst.round(interval);
+		//
+		borderArray = new double[borderNumber + 1];
+		borderArray[0] = 0.0;
+		for (int i = 1; i < borderArray.length; i++) {
+			borderArray[i] = CConst.round(borderArray[i - 1] + interval);
+		}
+		// 各ゲーム領域にある個体数カウンタ
+		int[][] counterTable = new int[borderArray.length - 1][borderArray.length - 1];
+
+		// mating の領域は4領域 0.0 - 0.5 - 1.0
+		// 領域を決めない場合はこの配列を 0.0 - 1.0 にする
+		double[] matingArray;
+		if (areaCheck) {
+			matingArray = new double[3];
+			matingArray[0] = 0.0;
+			matingArray[1] = 0.5;
+			matingArray[2] = 1.0;
+		} else {
+			matingArray = new double[2];
+			matingArray[0] = 0.0;
+			matingArray[1] = 1.0;
+		}
+		// 領域が決まったらファイルに情報を書き出す。
+		if (areaCheck) {
+			pwAreaPayoff.println((matingArray.length + 1) + "\t" + CConst.GEN + "\t" + CConst.EXP);
+			pwAreaNumber.println((matingArray.length + 1) + "\t" + CConst.GEN + "\t" + CConst.EXP);
+		} else {
+			pwAreaPayoff.println(4 + "\t" + CConst.GEN + "\t" + CConst.EXP);
+			pwAreaNumber.println(4 + "\t" + CConst.GEN + "\t" + CConst.EXP);
+		}
+		// 交配領域カウンタ
+		int[][] matingCounter = new int[matingArray.length - 1][matingArray.length - 1];
+		// 単に領域のチェックをするためのカウンタ
+		int[][] justAreaCounter = new int[2][2];
+		double[][] justAreaPayoff = new double[2][2];
+		// 収束したときのみ記録する必要があるから一時的に保存する配列
+		int[][] thisGenAreaCounter = new int[CConst.GEN][4];
+		double[][] thisGenAreaPayoff = new double[CConst.GEN][4];
+		// 領域収束をチェックする。交配領域はmatingArray による。
+		int[][] areaConCheck = new int[CConst.GEN][matingArray.length - 1];
+		// check
+		/*
+		 * for (int i = 0; i < borderArray.length; i++) { System.out.print("\t" +
+		 * borderArray[i]); } System.out.println("");
+		 *///
+			// 個体を500個発生させる
+		int num = CConst.numOfMember;
+		pop = new CIndividual[num];
+		for (int m = 0; m < pop.length; m++) {
+			pop[m] = new CIndividual();
+		}
+
+		// 実験ループ の開始。収束した回数を exp で数える
+		int exp = 0;
+		wholeCount = 0; // EXP回収束実験を得るのに何回のループが必要だったか
+		while (exp < CConst.EXP) {
+			// 一時的平均値 実験ごとに初期化する
+			for (int i = 0; i < tmpAve.length; i++) {
+				tmpAve[i] = 0.0;
+			}
+			// Q[] も初期化
+			for (int i = 0; i < Q.length; i++) {
+				Q[i] = 'N';
+			}
+			// areaConvCheck の初期化
+			for (int i = 0; i < areaConCheck.length; i++) {
+				for (int j = 0; j < areaConCheck[0].length; j++) {
+					areaConCheck[i][j] = 0;
+				}
+			}
+			// 一時的な配列を初期化
+			for (int i = 0; i < CConst.GEN; i++) {
+				for (int j = 0; j < 4; j++) {
+					thisGenAreaCounter[i][j] = 0;
+					thisGenAreaPayoff[i][j] = 0.0;
+				}
+			}
+			// 状況フラグも初期化
+			stateFlag = 'N';
+			// 収束フラグを初期化
+			convergeFlag = false;
+			// 集団状態はすべての世代で 'N'
+			for (int i = 0; i < CConst.GEN; i++) {
+				popState[i] = 'N';
+			}
+			// 交配領域ごとの平均利得を記録する配列
+			// GEN行x領域数であることに注意
+			double[][] matingRegionPayoff = new double[CConst.GEN][(matingArray.length - 1) * 2];
+			for (int i = 0; i < matingRegionPayoff.length; i++) {
+				for (int j = 0; j < matingRegionPayoff[0].length; j++) {
+					matingRegionPayoff[i][j] = 0.0;
+				}
+			}
+			// 一時配列を作っておく必要がある
+			double[][] tmpRegionPayoff = new double[matingArray.length - 1][matingArray.length - 1];
+			for (int i = 0; i < tmpRegionPayoff.length; i++) {
+				for (int j = 0; j < tmpRegionPayoff[i].length; j++) {
+					tmpRegionPayoff[i][j] = 0.0;
+				}
+			}
+
+			//
+			System.out.println("exp=" + exp);
+			// 世代ループ
+			for (int gen = 0; gen < CConst.GEN; gen++) {
+				// System.out.println("gen="+gen);
+				// 単に領域の値が欲しいだけの場合の配列の初期化
+				for (int i = 0; i < 2; i++) {
+					for (int j = 0; j < 2; j++) {
+						justAreaCounter[i][j] = 0;
+						justAreaPayoff[i][j] = 0.0;
+					}
+				}
+				// 染色体の16進数表現をこの実験に関して一時的に保存する
+				// 1行にその世代のすべての個体の染色体を詰め込む。
+				StringBuffer sb = new StringBuffer("");
+				for (int i = 0; i < CConst.numOfMember; i++) {
+					sb.append(pop[i].chrom16);
+				}
+				tmpGType[gen] = new String(sb);
+
+				// ゲーム領域個体数カウンタ初期化
+				for (int i = 0; i < counterTable.length; i++) {
+					for (int j = 0; j < counterTable[0].length; j++) {
+						counterTable[i][j] = 0;
+					}
+				}
+				// 交配領域カウンタ初期化
+				for (int i = 0; i < matingCounter.length; i++) {
+					for (int j = 0; j < matingCounter[i].length; j++) {
+						matingCounter[i][j] = 0;
+					}
+				}
+				// ゲーム領域を区分しない場合はこっち
+				if (noGrid) {
+					System.out.println("in noGrid");
+					// 個体番号の List
+					List<Integer> memberList = new ArrayList<Integer>();
+					for (int m = 0; m < pop.length; m++) {
+						memberList.add(m);
+					}
+					// リストをシャッフル
+					Collections.shuffle(memberList);
+					int gameCount = 100;
+					for (int p = 0; p < memberList.size() - 1; p++) {
+						int player1 = memberList.get(p);
+						for (int q = p + 1; q < memberList.size(); q++) {
+							int player2 = memberList.get(q);
+							// ココにゲームが入る ゲームは100回
+							for (int n = 0; n < gameCount; n++) {
+								game(player1, player2);
+							}
+							// check
+							// System.out.println("id["+player1+"]:"+pop[player1].gameCount+"回,得点="+pop[player1].cumPayoff);
+							// System.out.println("id["+player2+"]"+pop[player2].gameCount+"回,得点="+pop[player2].cumPayoff);
+						}
+					} // end of for(p=0 ; 総当たり戦の終わり
+						// 利得は「平均利得」である
+					for (int m = 0; m < memberList.size(); m++) {
+						int id = memberList.get(m);
+						double cumPayoff = pop[id].getCumPayoff();
+						cumPayoff = cumPayoff / (double) pop[id].gameCount;
+						pop[memberList.get(m)].setCumPayoff(cumPayoff);
+					}
+
+				} else {
+					// ゲーム領域判定をする場合
+					// System.out.println("in game Grid");
+					for (int i = 0; i < borderArray.length - 1; i++) {
+						double minX = borderArray[i];
+						double maxX = borderArray[i + 1];
+						for (int j = 0; j < borderArray.length - 1; j++) {
+							double minY = borderArray[j];
+							double maxY = borderArray[j + 1];
+							// ゲーム領域i,j 用のリスト
+							List<Integer> regionList = new ArrayList<Integer>();
+							for (int m = 0; m < pop.length; m++) {
+								boolean r = pop[m].isThere(minX, maxX, minY, maxY);
+								//
+								if (r) {
+									// 個体が領域に入っているなら List に個体番号を入れる
+									regionList.add(m);
+									counterTable[i][j]++;
+								}
+							} // end of for(int m
+								// System.out.print("reg["+i+"]["+j+"]:"+counterTable[i][j]+":");
+								// リストをシャッフル
+							Collections.shuffle(regionList);
+							/*
+							 * for(int p=0;p< regionList.size();p++){
+							 * System.out.print(regionList.get(p)+","); } System.out.println("");
+							 */
+							// 領域の個体数が1以下なら無視
+							int gameCount = 100;
+							if (counterTable[i][j] > 1) {
+								// リストに従ってゲームを行う.領域 i,j でのゲーム
+								// System.out.println("\nreg[" + i + "][" + j +
+								// "]:"+regionList.size());
+								for (int p = 0; p < regionList.size() - 1; p++) {
+									int player1 = regionList.get(p);
+									for (int q = p + 1; q < regionList.size(); q++) {
+										int player2 = regionList.get(q);
+										// ココにゲームが入る ゲームは100回
+										for (int n = 0; n < gameCount; n++) {
+											game(player1, player2);
+										}
+										// check
+										// System.out.println("id["+player1+"]:"+pop[player1].gameCount+"回,得点="+pop[player1].cumPayoff);
+										// System.out.println("id["+player2+"]"+pop[player2].gameCount+"回,得点="+pop[player2].cumPayoff);
+									}
+								} // end of for(p=0 ; 総当たり戦の終わり
+									// 利得は「平均利得」である
+								for (int m = 0; m < regionList.size(); m++) {
+									int id = regionList.get(m);
+									double cumPayoff = pop[id].getCumPayoff();
+									cumPayoff = cumPayoff / (double) pop[id].gameCount;
+									pop[regionList.get(m)].setCumPayoff(cumPayoff);
+								}
+								// System.out.print("ゲーム領域（" + i + "," + j +
+								// "）");
+								// for(int m=0;m<regionList.size();m++){
+								// int id = regionList.get(m);
+								// System.out.print("\tid="+id+":"
+								// +CConst.round(pop[id].getCumPayoff())+"count:"
+								// +pop[id].gameCount);
+								// }
+								// System.out.println("");
+							} // end of if(counterTable[i][j] >1
+						} // end of for(int j
+
+					} // end of for(int i ；領域 i, j の終わり
+
+				}
+
+				// ゲーム領域すべてでゲームが終了したので、集団全体の平均値を記録して、収束判定を行う。
+
+				// for(int i=0;i<gameAreaCount.length;i++){
+				// System.out.print("\t"+gameAreaCount[i]);
+				// }
+				// System.out.println("");
+				//
+				// for (int i = 0; i < counterTable.length; i++) {
+				// for (int j = 0; j < counterTable[0].length; j++) {
+				// System.out.print("\t" + counterTable[i][j]);
+				// }
+				// System.out.println("");
+				// }
+				// 集団の平均値を一時的にとっておく
+				double aveSum = 0.0;
+				for (int m = 0; m < pop.length; m++) {
+					aveSum += pop[m].cumPayoff;
+				}
+				tmpAve[gen] = aveSum / (double) CConst.numOfMember;
+				//
+				//
+				if (tmpAve[gen] >= coopValue) { // 協力の値を達成した
+					stateFlag = '0'; // フラグのセット
+				} else {
+					if (tmpAve[gen] <= defectValue) {
+						stateFlag = '1';
+					} else {
+						stateFlag = 'N';
+					}
+				}
+				// Q の詰め替え
+				for (int i = 1; i < checkTerm; i++) {
+					Q[i - 1] = Q[i];
+				}
+				Q[checkTerm - 1] = stateFlag;
+				// Qのチェック収束条件を満たしているかどうかをチェックする。
+				int cntCoop = 0;
+				int cntDefect = 0;
+				int cntNone = 0;
+				for (int i = 0; i < Q.length; i++) {
+					if (Q[i] == '0') {
+						cntCoop++;
+					}
+					if (Q[i] == '1') {
+						cntDefect++;
+					}
+					if (Q[i] == 'N') {
+						cntNone++;
+					}
+				} // C ,D,Nの数を数えた
+					// その回数がcheckCount を超えているなら
+				if (cntCoop >= checkCount) {
+					// 収束フラグをセットする。
+					convergeFlag = true;
+					System.out.println("収束：gen=" + gen + "\t実験回数：exp=" + exp);
+					// 集団の状態は
+					popState[gen] = '0';
+				}
+				// Defect がcheckCount を超えている
+				if (cntDefect >= checkCount) {
+					// 状況は裏切り
+					popState[gen] = '1';
+				}
+				if (cntNone >= checkCount) {
+					popState[gen] = 'N';
+				}
+				// 収束判定の終わり
+
+				// check
+				// System.out.println("集団の状態：" + popState[gen]);
+				/*
+				 * 単に4つの領域のデータがほしいだけ、の場合 ここで領域の個体数と平均値を入れておく。ここだけで処理したい
+				 */
+				if (!areaCheck) { // areaCheckがONのときは、matingArea が書かれる
+					double[][] tmpPayoff = new double[2][2];
+					// p=0 -0.5, q=0-0.5 領域3「裏切り」
+					justAreaCounter[1][0] = regionCounter(0.0, 0.5, 0.0, 0.5);
+					tmpPayoff[1][0] = regionPayoffSum(0.0, 0.5, 0.0, 0.5);
+					// p=0.5-1.0, q = 0-0.5 領域4「しっぺ返し」
+					justAreaCounter[1][1] = regionCounter(0.5, 1.0, 0.0, 0.5);
+					tmpPayoff[1][1] = regionPayoffSum(0.5, 1.0, 0.0, 0.5);
+					// p = 0.0-0.5, q = 0.5-1.0 領域1「あまのじゃく」
+					justAreaCounter[0][0] = regionCounter(0.0, 0.5, 0.5, 1.0);
+					tmpPayoff[0][0] = regionPayoffSum(0.0, 0.5, 0.5, 1.0);
+					// p = 0.5-1.0, q= 05.-1.0 領域2「お人好し」
+					justAreaCounter[0][1] = regionCounter(0.5, 1.0, 0.5, 1.0);
+					tmpPayoff[0][1] = regionPayoffSum(0.5, 1.0, 0.5, 1.0);
+					for (int i = 0; i < tmpPayoff.length; i++) {
+						for (int j = 0; j < tmpPayoff[i].length; j++) {
+							if (justAreaCounter[i][j] == 0) {
+								justAreaPayoff[i][j] = 0.0;
+							} else {
+								justAreaPayoff[i][j] = tmpPayoff[i][j] / justAreaCounter[i][j];
+							}
+						}
+					}
+					thisGenAreaPayoff[gen] = matToRecord(justAreaPayoff);
+					thisGenAreaCounter[gen] = matToRecord(justAreaCounter);
+				} else {// end of if(justCheck)
+					/*
+					 * ここから交配領域を設定して mating を行うGA過程が始まる
+					 * 
+					 */
+					// 交配領域に分布する個体の数は先にチェックしておく
+					double[][] tmpPayoff = new double[2][2];
+					// p=0 -0.5, q=0-0.5 領域1「裏切り」
+					matingCounter[1][0] = regionCounter(0.0, 0.5, 0.0, 0.5);
+					tmpPayoff[1][0] = regionPayoffSum(0.0, 0.5, 0.0, 0.5);
+					// p=0.5-1.0, q = 0-0.5 領域2「しっぺ返し」
+					matingCounter[1][1] = regionCounter(0.5, 1.0, 0.0, 0.5);
+					tmpPayoff[1][1] = regionPayoffSum(0.5, 1.0, 0.0, 0.5);
+					// p = 0.0-0.5, q = 0.5-1.0 領域3「あまのじゃく」
+					matingCounter[0][0] = regionCounter(0.0, 0.5, 0.5, 1.0);
+					tmpPayoff[0][0] = regionPayoffSum(0.0, 0.5, 0.5, 1.0);
+					// p = 0.5-1.0, q= 05.-1.0 領域4「お人好し」
+					matingCounter[0][1] = regionCounter(0.5, 1.0, 0.5, 1.0);
+					tmpPayoff[0][1] = regionPayoffSum(0.5, 1.0, 0.5, 1.0);
+					for (int i = 0; i < tmpRegionPayoff.length; i++) {
+						for (int j = 0; j < tmpRegionPayoff[i].length; j++) {
+							if (matingCounter[i][j] == 0) {
+								tmpRegionPayoff[i][j] = 0.0;
+							} else {
+								tmpRegionPayoff[i][j] = tmpPayoff[i][j] / matingCounter[i][j];
+							}
+						}
+					}
+					// この世代での各領域の平均値を配列へしまい込む
+					matingRegionPayoff[gen] = matToRecord(tmpRegionPayoff);
+					areaConCheck[gen] = matToRecord(matingCounter);
+
+					// 領域チェックをする場合はファイルへ書き込み
+
+					pwAreaPayoff.print(CConst.round(matingRegionPayoff[gen][0]));
+					pwAreaNumber.print(areaConCheck[gen][0]);
+					for (int area = 1; area < areaConCheck[gen].length; area++) {
+						pwAreaPayoff.print("\t" + CConst.round(matingRegionPayoff[gen][area]));
+						pwAreaNumber.print("\t" + areaConCheck[gen][area]);
+					}
+					pwAreaPayoff.println("");
+					pwAreaNumber.println("");
+				} // end of if...else
+					// check
+					// System.out.print("gen=" + gen);
+					// for (int j = 0; j < areaConCheck[gen].length; j++) {
+					// System.out.print("\t" + areaConCheck[gen][j]);
+					// }
+					// System.out.println("\tave=" + tmpAve[gen]);
+
+				for (int i = 0; i < matingArray.length - 1; i++) {
+					double minX = matingArray[i];
+					double maxX = matingArray[i + 1];
+					for (int j = 0; j < matingArray.length - 1; j++) {
+						double minY = matingArray[j];
+						double maxY = matingArray[j + 1];
+						// mating 領域i,j 用のリスト
+						List<Integer> matingRegionList = new ArrayList<Integer>();
+						for (int m = 0; m < pop.length; m++) {
+							boolean r = pop[m].isThere(minX, maxX, minY, maxY);
+							if (r) {
+								// 個体が領域に入っているなら List に個体番号を入れる
+								matingRegionList.add(m);
+								matingCounter[i][j]++;
+							} // end of if
+						} // end of for(int m 個体の領域チェック
+						//
+						
+						// ここまでで mating 領域 i, j に生息する個体番号がわかる
+						// 個体番号が分かれば、それらを1集団として親選択するので、
+						// まずは領域ごとの集団に対して線形スケーリングを行う
+						// ただし、領域に個体がない場合を除く
+						// Collections.shuffle(matingRegionList);
+						if (matingRegionList.size() > 0) {
+							linearScalling(matingRegionList);
+						}
+						// System.out.println("交配領域[" + i + "," + j + "]:");
+						// for (int m = 0; m < matingRegionList.size(); m++)
+						// {
+						// int id = matingRegionList.get(m);
+						// // 16進数のチェック
+						// System.out.println("id[" + id + "]:" +
+						// pop[id].getChrom16());
+						// }
+						// System.out.println("");
+						// スケーリング利得に基づいた親選択
+						// 親リスト。
+						List<Integer> parentsList = new ArrayList<Integer>();
+						// 親を作るメソッド。親の数が偶数になるように List を作成する
+						// 領域に個体が射なければ無視
+						if (matingRegionList.size() > 0) {
+							makeParent(matingRegionList, parentsList);
+							// check
+							System.out.print("交配領域["+i+","+j+"]:");
+							// for(int m=0;m<matingRegionList.size();m++){
+							// //System.out.print("\tid="+matingRegionList.get(m)+"\t利得："+pop[matingRegionList.get(m)].getScalledPayoff());
+							// System.out.print("\tid="+matingRegionList.get(m)+":"+CConst.round(pop[matingRegionList.get(m)].getScalledPayoff()));
+							// }
+							// System.out.println("");
+							// System.out.print("親番号 ["+i+","+j+"]:");
+							// for(int m=0;m<parentsList.size();m++){
+							// System.out.print("\tid="+parentsList.get(m));
+							// }
+							// System.out.println("");
+							// 親のリストができたのでペアリングを行う
+							// いったん親番号をランダムに入れ替える。
+							Collections.shuffle(parentsList);
+							// System.out.print("親番号：");
+							// for (int m = 0; m < parentsList.size(); m++) {
+							// System.out.print("\t" + parentsList.get(m));
+							// }
+							// System.out.println("");
+							// クロスオーバー選択
+							// 親リストは偶数なので、前から二つずつペアリング
+							for (int m = 0; m < parentsList.size() - 1; m += 2) {
+								int parent1, parent2;
+								parent1 = parentsList.get(m);
+								parent2 = parentsList.get(m + 1);
+								// System.out.println("(" + parent1 + "," +
+								// parent2
+								// +
+								// ")");
+								// くじに当たればクロスオーバー
+								// check
+								// System.out.print("before["+parent1+"]:");
+								// for(int index = 0;index <
+								// CConst.LENGTH;index++){
+								// System.out.print(pop[parent1].chrom[index]);
+								// }
+								// System.out.print("\nbefore["+parent2+"]:");
+								// for(int index = 0;index <
+								// CConst.LENGTH;index++){
+								// System.out.print(pop[parent2].chrom[index]);
+								// }
+								// System.out.println("");
+								Random randSeed = new Random();
+								if (bingo(CConst.crossProb)) {
+									int point = randSeed.nextInt(CConst.LENGTH);
+									// まったく入れ替わらない・全部入れ替わるが起きるといやなので
+									while (point == 0 || point == CConst.LENGTH - 1) {
+										point = randSeed.nextInt(CConst.LENGTH);
+									}
+									for (int index = 0; index < point; index++) {
+										char tmp = pop[parent1].chrom[index];
+										pop[parent1].chrom[index] = pop[parent2].chrom[index];
+										pop[parent2].chrom[index] = tmp;
+									}
+									// System.out.println("point = "+point);
+									// System.out.print("after["+parent1+"]:");
+									// for(int index = 0;index <
+									// CConst.LENGTH;index++){
+									// System.out.print(pop[parent1].chrom[index]);
+									// }
+									// System.out.print("\nafter["+parent2+"]:");
+									// for(int index = 0;index <
+									// CConst.LENGTH;index++){
+									// System.out.print(pop[parent2].chrom[index]);
+									// }
+									// System.out.println("");
+								} // end of if(クロスオーバーがビンゴ
+							} // クロスオーバー終わり
+								// 突然変異。すべてのビットに対して CConst.mutProb の確率で突然変異が起きる
+							for (int m = 0; m < parentsList.size(); m++) {
+								int id = parentsList.get(m);
+								for (int index = 0; index < CConst.LENGTH; index++) {
+									if (bingo(CConst.mutProb)) {
+										if (pop[id].chrom[index] == '1') {
+											pop[id].chrom[index] = '0';
+										} else {
+											pop[id].chrom[index] = '1';
+										}
+									} // end of if(突然変異がビンゴ
+								}
+							} // end of for(m=0 ...この領域のすべての個体について突然変異終わり
+								// mating 領域のすべての個体についてクロスオーバーと突然変異が終わり
+								// 各個体の染色体が置き換わっているので、この世代は終わり。
+								// 置き換えられた染色体であらたな個体を作る.
+								// このとき、親の数が元の領域にある個体数より一つ多い場合（元の個体数が奇数の場合）がある。
+								// そこで、元の個体数を集めた matingRegionList の数だけ
+								// parentsList
+								// と置き換えていく
+							for (int m = 0; m < matingRegionList.size(); m++) {
+								char[] rep = new char[CConst.LENGTH];
+								int id = parentsList.get(m);
+								for (int index = 0; index < rep.length; index++) {
+									rep[index] = pop[id].chrom[index];
+								}
+								pop[matingRegionList.get(m)].replace(rep);
+							}
+						}
+						// 新しい集団のチェック
+						// for (int m = 0; m < matingRegionList.size(); m++)
+						// {
+						// int id = matingRegionList.get(m);
+						// // 16進数のチェック
+						// System.out.println("id[" + id + "]:" +
+						// pop[id].getChrom16());
+						// }
+					} // end of for( int j=0;
+				} // end of for(int i=0; mating 用の領域決定の終わり
+
+			} // end of for(int gen=0 世代ループの終わり
+				// すべての世代が終了した。
+
+			// 領域チェックをするかどうかで処理が異なる。交配領域を設定した場合には収束が期待できない
+			if (areaCheck) {
+				// 遺伝子型をファイルへ書き出す
+				for (int i = 0; i < tmpGType.length; i++) {
+					pwGType.println(tmpGType[i]);
+				}
+				for (int i = 0; i < aveTable.length; i++) {
+					aveTable[i][exp] = tmpAve[i];
+				}
+				exp++;
+			} else {
+				if (convergeFlag) {// 協力への収束があった
+					// 遺伝子型をファイルへ書き出す
+					for (int i = 0; i < tmpGType.length; i++) {
+						pwGType.println(tmpGType[i]);
+					}
+					// 平均値を平均値テーブルに保存,集団の状態記録をテーブルに保存
+					for (int i = 0; i < aveTable.length; i++) {
+						aveTable[i][exp] = tmpAve[i];
+						popStateTable[i][exp] = popState[i];
+					}
+					// このとき、領域データをファイルへ書き出す。
+					for (int i = 0; i < CConst.GEN; i++) {
+						pwAreaNumber.print(thisGenAreaCounter[i][0]);
+						pwAreaPayoff.print(CConst.round(thisGenAreaPayoff[i][0]));
+						for (int j = 1; j < 4; j++) {
+							pwAreaNumber.print("\t" + thisGenAreaCounter[i][j]);
+							pwAreaPayoff.print("\t" + CConst.round(thisGenAreaPayoff[i][j]));
+						}
+						pwAreaNumber.println("");
+						pwAreaPayoff.println("");
+					}
+					System.out.println("loop =" + exp + "\twholeCount =" + wholeCount);
+					// カウントを進める
+					exp++;
+				} // 収束がなかった場合は何も記録しない
+			} // end of if(areaCheck....
+
+			// 協力への収束した実験と、収束しなかった実験とを合わせて何回回ったか
+			wholeCount++;
+			// 次の実験のために集団を初期化
+			for (int m = 0; m < CConst.numOfMember; m++) {
+				pop[m].initialize();
+			}
+
+		} // end of for( int exp=0 実験ループの終わり
+
+		// 規定回数収束した実験を得た、もしくは規定回数の実験が終わったら、平均値をファイルに書き出す
+		for (int i = 0; i < aveTable.length; i++) {
+			for (int j = 0; j < aveTable[i].length; j++) {
+				pwAve.print(CConst.round(aveTable[i][j]) + "\t");
+			}
+			pwAve.println("");
+		}
+
+		// 実験の基礎情報を作る
+		pwStat.println("experiment date:" + timeStamp);
+		pwStat.println("size of population: " + CConst.numOfMember);
+		pwStat.println("prob of cross over = " + CConst.crossProb);
+		pwStat.println("prob of mutant = " + CConst.mutProb);
+		pwStat.println("length  of genotype = " + CConst.LENGTH);
+		pwStat.println("Generation = " + CConst.GEN);
+		if (areaCheck) {
+			pwStat.println("交配領域が区分されているケース");
+		} else {
+			pwStat.println("交配領域が区分されていないケース");
+			pwStat.println("total " + wholeCount + " experiments are needed for " + CConst.EXP + " converge.");
+		}
+
+		if (!areaCheck) { // 交配領域が区分されていない場合にのみ収束情報をチェックする
+			// 集団の状態記録から、協力の持続期間について情報を得る。
+			pwStat.println("loop\tfirstGen\ttotalCoop\tmaxKeep");
+			int keep, maxKeep, totalCoop, firstGen;
+			int sumFirstGen, sumMaxKeep, sumTotalCoop;
+			sumFirstGen = sumMaxKeep = sumTotalCoop = 0;
+			int maxMaxKeep = 0;
+			int maxTotalCoop = 0;
+			int maxMaxExp = 0;
+			int maxTotalExp = 0;
+			int minFirstGen = 1000000;
+			int minFirstExp = 0;
+			boolean firstFlag;
+			for (int j = 0; j < CConst.EXP; j++) {
+				keep = maxKeep = totalCoop = firstGen = 0;
+				firstFlag = false;
+				for (int i = 0; i < CConst.GEN; i++) {
+					char state = popStateTable[i][j];
+					if (state == '0') {
+						keep++;
+						if (maxKeep < keep) {
+							maxKeep = keep;
+						}
+						totalCoop++;
+						if (!firstFlag) {
+							firstGen = i;
+							firstFlag = true;
+						}
+					} else {
+						if (keep != 0) {
+							if (maxKeep < keep) {
+								maxKeep = keep;
+							}
+							keep = 0;
+						} // end if(keep !=0
+					} // end if(state == C... else
+				} // end for(int i=0
+				sumMaxKeep += maxKeep;
+				sumTotalCoop += totalCoop;
+				sumFirstGen += firstGen;
+				if (maxMaxKeep < maxKeep) {
+					maxMaxKeep = maxKeep;
+					maxMaxExp = j;
+				}
+				if (maxTotalCoop < totalCoop) {
+					maxTotalCoop = totalCoop;
+					maxTotalExp = j;
+				}
+				if (minFirstGen > firstGen) {
+					minFirstGen = firstGen;
+					minFirstExp = j;
+				}
+				pwStat.println(j + "\t" + firstGen + "\t" + totalCoop + "\t" + maxKeep);
+			}
+			// end for(int j=0
+			double aveFirstGen = (double) sumFirstGen / (double) CConst.EXP;
+			double aveMaxKepp = (double) sumMaxKeep / (double) CConst.EXP;
+			double aveTotalCoop = (double) sumTotalCoop / (double) CConst.EXP;
+			pwStat.println("ave first gen =" + CConst.round(aveFirstGen) + "\nave max keep = "
+					+ CConst.round(aveMaxKepp) + "\nave total coop =  " + CConst.round(aveTotalCoop));
+			pwStat.println("min first gen of this exp  " + minFirstExp + "-th =" + minFirstGen
+					+ "\nmax keep of this exp  " + maxMaxExp + "-th = " + maxMaxKeep + "\nmax total coop  of this exp  "
+					+ maxTotalExp + "-th = " + maxTotalCoop);
+			//
+		} // end of if(!areaCheck... 交配領域がチェックされていない場合だけ収束情報を出す 終わり
+
+		// ファイルを閉じて終了
+		closeFiles();
+		System.out.println("end of main()");
+
+	}// end of main()
+
+	// 日付からファイル名をつくるので。
+	static void makeDate() {
+		// 記録用ファイルのための日付取得
+
+		Calendar cal1 = Calendar.getInstance();
+		int year = cal1.get(Calendar.YEAR); // 現在の年を取得
+		int month = cal1.get(Calendar.MONTH); // 現在の月数-1を取得
+		int day = cal1.get(Calendar.DATE);
+		int hour = cal1.get(Calendar.HOUR_OF_DAY); // 現在の時を取得
+		int minute = cal1.get(Calendar.MINUTE); // 現在の分を取得
+		int second = cal1.get(Calendar.SECOND); // 現在の秒を取得
+		String[] monthArray = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jly", "Aug", "Sep", "Oct", "Nov", "Dec" }; // 月表示を見やすくするため
+		dateName = new String(monthArray[month] + day + "_" + year);
+		timeStamp = new String(dateName + ":" + hour + ":" + minute + ":" + second);
+	}
+
+	static void makeFiles() {
+		// 記録ファイルの準備
+		gTypeFile = new File(dateName + "_GType.txt");
+		statFile = new File(dateName + "_stat.txt");
+		aveFile = new File(dateName + "_ave.txt");
+		// 領域ごとのチェックファイルを作る
+		matingAreaPayoff = new File(dateName + "_areaPayoff.txt");
+		matingAreaNumber = new File(dateName + "_areaCount.txt");
+		try {
+			FileWriter fw = new FileWriter(gTypeFile);
+			FileWriter fw2 = new FileWriter(statFile);
+			FileWriter fw3 = new FileWriter(aveFile);
+			BufferedWriter bw = new BufferedWriter(fw);
+			BufferedWriter bw2 = new BufferedWriter(fw2);
+			BufferedWriter bw3 = new BufferedWriter(fw3);
+			pwGType = new PrintWriter(bw);
+			pwStat = new PrintWriter(bw2);
+			pwAve = new PrintWriter(bw3);
+
+			FileWriter fw4 = new FileWriter(matingAreaPayoff);
+			BufferedWriter bw4 = new BufferedWriter(fw4);
+			pwAreaPayoff = new PrintWriter(bw4);
+			FileWriter fw5 = new FileWriter(matingAreaNumber);
+			BufferedWriter bw5 = new BufferedWriter(fw5);
+			pwAreaNumber = new PrintWriter(bw5);
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	} // end of makeFiles()
+
+	static void closeFiles() {
+		pwGType.close();
+		pwStat.close();
+		pwAve.close();
+		pwAreaPayoff.close();
+		pwAreaNumber.close();
+	}
+
+	private static int[] matToRecord(int[][] in) {
+		// 2次元配列を1次元配列にしまい込む。
+		int[] out = new int[in.length * in[0].length];
+		for (int i = 0; i < in.length; i++) {
+			for (int j = 0; j < in[i].length; j++) {
+				out[i * in[i].length + j] = in[i][j];
+			}
+		}
+		// System.out.println("");
+		return out;
+	}
+
+	// 上記のdouble 版
+	private static double[] matToRecord(double[][] in) {
+		double[] out = new double[in.length * in[0].length];
+		for (int i = 0; i < in.length; i++) {
+			for (int j = 0; j < in[i].length; j++) {
+				out[i * in[i].length + j] = in[i][j];
+			}
+		}
+		// System.out.println("");
+		return out;
+	}
+
+	private static boolean bingo(double prob) {
+		boolean r = false;
+		// 乱数を出して、確率以下ならビンゴ
+		if (Math.random() < prob)
+			r = true;
+		return r;
+	}
+
+	private static void makeParent(List<Integer> matingRegionList, List<Integer> parentsList) {
+		// ルーレットを作る
+		double sum = 0.0;
+		for (int i = 0; i < matingRegionList.size(); i++) {
+			sum += pop[matingRegionList.get(i)].getScalledPayoff();
+		}
+		// ルーレットの幅
+		double[] roulet = new double[matingRegionList.size()];
+		roulet[0] = pop[matingRegionList.get(0)].getScalledPayoff() / sum;
+		for (int m = 1; m < matingRegionList.size(); m++) {
+			roulet[m] = roulet[m - 1] + (pop[matingRegionList.get(m)].getScalledPayoff() / sum);
+		}
+		// for(int m=0;m<roulet.length;m++){
+		// System.out.print("\t"+CConst.round(roulet[m]));
+		// }
+		// System.out.println("");
+		// ルーレットを回して交配領域にある個体と同じ 数だけ親を選択
+		double border;
+		int p_index;
+		for (int i = 0; i < matingRegionList.size(); i++) {
+			p_index = 0; // 初期化の位置に注意
+			border = Math.random();
+			// System.out.print("確率:\t"+CConst.round(border));
+			while (roulet[p_index] < border)
+				p_index++;
+			parentsList.add(matingRegionList.get(p_index));
+		}
+		// System.out.println("");
+		// 親の数が奇数であれば交配できないのでひとつ選び直す
+		if (matingRegionList.size() % 2 == 1) {
+			p_index = 0;
+			border = Math.random();
+			while (roulet[p_index] < border)
+				p_index++;
+			parentsList.add(matingRegionList.get(p_index));
+		}
+	}
+
+	private static void linearScalling(List<Integer> mR) {
+		// 線形スケーリング。まず、最大値、最小値、平均値を求める。
+		double max, min, ave;
+		double sum = 0.0;
+		max = pop[mR.get(0)].getCumPayoff();
+		min = pop[mR.get(0)].getCumPayoff();
+		sum = pop[mR.get(0)].getCumPayoff();
+		for (int i = 1; i < mR.size(); i++) {
+			int popNumber = mR.get(i);
+			sum += pop[popNumber].getCumPayoff();
+			if (max < pop[popNumber].getCumPayoff()) {
+				max = pop[popNumber].getCumPayoff();
+			}
+			if (min > pop[popNumber].getCumPayoff()) {
+				min = pop[popNumber].getCumPayoff();
+			}
+		}
+		ave = sum / (double) mR.size();
+		// check
+		/*
+		 * System.out.print("size:" + mR.size()); for (int i = 0; i < mR.size(); i++) {
+		 * System.out.print("\t" + pop[mR.get(i)].getCumPayoff()); }
+		 * System.out.println("\nmax=" + max + "\tmin=" + min + "\tave=" + ave);
+		 */
+		// 線形スケーリングの係数計算
+		double fmultiple = 2.0;
+		double delta, a, b;
+		if (min > (fmultiple * ave - max) / (fmultiple - 1.0)) {
+			delta = max - ave;
+			a = (fmultiple - 1.0) * ave / delta;
+			b = fmultiple * ave - a * max;
+		} else {
+			delta = ave - min;
+			a = ave / delta;
+			b = -min * ave / delta;
+		}
+		// 以上で線形スケーリングの係数が決定した。
+		// 以下でスケーリングを行い、数値を個体に格納する。
+		delta = 0.0;// 使い回す
+		for (int m = 0; m < mR.size(); m++) {
+			double payoff = pop[mR.get(m)].cumPayoff;
+			pop[mR.get(m)].setScalledPayoff(a * payoff + b);
+		}
+	}// end of linearScalling()
+		//
+
+	static void game(int p1, int p2) {
+		// 個体番号 p1,p2 でゲームを行う。
+		// それぞれのプレイヤーの「手」
+		// System.out.print("(" + p1 + "," + p2 + ")\t");
+		// System.out.println("("+pop[p1].mySelect()+","+pop[p2].mySelect()+")");
+		char select_p1 = pop[p1].mySelect();
+		char select_p2 = pop[p2].mySelect();
+		if (select_p1 == '0' && select_p2 == '0') {
+			pop[p1].setPayoff(3.0);
+			pop[p2].setPayoff(3.0);
+		}
+		if (select_p1 == '0' && select_p2 == '1') {
+			pop[p1].setPayoff(0.0);
+			pop[p2].setPayoff(5.0);
+		}
+		if (select_p1 == '1' && select_p2 == '0') {
+			pop[p1].setPayoff(5.0);
+			pop[p2].setPayoff(0.0);
+		}
+		if (select_p1 == '1' && select_p2 == '1') {
+			pop[p1].setPayoff(1.0);
+			pop[p2].setPayoff(1.0);
+		}
+		pop[p1].reMem(select_p2);
+		pop[p2].reMem(select_p1);
+		//
+		// ゲームカウントを増やす
+		pop[p1].gameCount++;
+		pop[p2].gameCount++;
+
+		// System.out.println("(p1="+p1+",p2="+p2+")=("+select_p1+","+select_p2+"):");
+		// System.out.println("pre_mem:p1="+pop[p1].preMem+",p2="+pop[p2].preMem);
+		// double payoff_p1= pop[p1].getCumPayoff();
+		// double payoff_p2 = pop[p2].getCumPayoff();
+		// System.out.println("("+payoff_p1+","+payoff_p2+")");
+	}// end of game()
+
+	// Regioncounter
+	static int regionCounter(double minX, double maxX, double minY, double maxY) {
+		int r = 0;
+		for (int m = 0; m < CConst.numOfMember; m++) {
+			if (pop[m].isThere(minX, maxX, minY, maxY)) {
+				r++;
+			}
+		}
+		return r;
+	}
+
+	// 領域内の利得合計
+	static double regionPayoffSum(double minX, double maxX, double minY, double maxY) {
+		double sum = 0.0;
+		for (int m = 0; m < CConst.numOfMember; m++) {
+			if (pop[m].isThere(minX, maxX, minY, maxY)) {
+				sum += pop[m].cumPayoff;
+			}
+		}
+		return sum;
+	}
+
+}// end of class nonTorusGrid
