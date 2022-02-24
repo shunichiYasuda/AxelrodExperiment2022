@@ -5,7 +5,7 @@ public class CIndividual {
 	char[] chrom; // 染色体。長さは対戦履歴の長さに応じて決まる
 	char[] memRec; // 対戦履歴。長さはCConst で決められた回数ｘ2
 	int adr; // 履歴が示す染色体上の位置
-	char myChoice; //履歴が示す染色体上の位置にある行動を選択する。
+	char myChoice; // 履歴が示す染色体上の位置にある行動を選択する。
 	// 利得関係
 	double payoff, scaledPayoff, cumPayoff, avePayoff;
 	// ゲームカウント。個体によってゲーム回数が異なるので
@@ -23,17 +23,16 @@ public class CIndividual {
 		// 記憶が指し示す染色体上のアドレス 0から数えるので、配列のアドレスになる（ビットを数えるときに注意）
 		String tmp = new String(this.memRec);
 		this.adr = Integer.parseInt(tmp, 2);
-		//そのアドレスにある行動（0:協力'C', 1：裏切り'D'）
+		// そのアドレスにある行動（0:協力'C', 1：裏切り'D'）
 		this.myChoice = this.chrom[this.adr];
 		// 利得関係初期化
 		payoff = scaledPayoff = cumPayoff = avePayoff = 0.0;
 	}// end of constructor
-		
 
 	// setter
 	public void setPayoff(double p) {
-		//ゲームの利得がはいってくる、ということはゲームが1回終わったということなので
-		//このメソッドの中でgameCount をすすめ、平均利得も計算しておく
+		// ゲームの利得がはいってくる、ということはゲームが1回終わったということなので
+		// このメソッドの中でgameCount をすすめ、平均利得も計算しておく
 		this.gameCount++;
 		this.payoff = p;
 		this.cumPayoff += p;
@@ -44,6 +43,7 @@ public class CIndividual {
 	public int getAdr() {
 		return this.adr;
 	}
+
 	public char[] getChrom() {
 		return this.chrom;
 	}
@@ -51,21 +51,27 @@ public class CIndividual {
 	public char[] getMemory() {
 		return this.memRec;
 	}
+
 	public double getPayoff() {
 		return this.payoff;
 	}
+
 	public double getCumPayoff() {
 		return this.cumPayoff;
 	}
+
 	public double getAvePayoff() {
 		return this.avePayoff;
 	}
+
 	public double getScaledPayoff() {
 		return this.scaledPayoff;
 	}
+
 	public char getChoice() {
 		return this.myChoice;
 	}
+
 	//
 	// 対戦履歴の更新。一回の対戦ごとに更新される。受け入れるのは対戦相手のchoice
 	public void reMem(char in) {
@@ -89,12 +95,31 @@ public class CIndividual {
 		for (int i = 0; i < L; i++) {
 			this.chrom[i] = this.memRec[i];
 		}
-		//記憶が更新されたら、adr が変わり、 myChoice が変わる。
-		//記憶の更新（ゲームのプレイ）がトリガーになるということだ。
-		String str= new String(this.memRec);
+		// 記憶が更新されたら、adr が変わり、 myChoice が変わる。
+		// 記憶の更新（ゲームのプレイ）がトリガーになるということだ。
+		String str = new String(this.memRec);
 		this.adr = Integer.parseInt(str, 2);
 		this.myChoice = this.chrom[this.adr];
 	}
+
+	// replace 新しい染色体を受け入れて自分自身を更新する。
+	public void replace(char[] in) {
+		for (int i = 0; i < CHeader.LENGTH; i++) {
+			this.chrom[i] = in[i];
+		}
+		// 染色体の最初の 2*PRE分を対戦履歴として memRecにコピー
+		for (int i = 0; i < memRec.length; i++) {
+			this.memRec[i] = this.chrom[i];
+		}
+		// 記憶が指し示す染色体上のアドレス 0から数えるので、配列のアドレスになる（ビットを数えるときに注意）
+		String tmp = new String(this.memRec);
+		this.adr = Integer.parseInt(tmp, 2);
+		// そのアドレスにある行動（0:協力'C', 1：裏切り'D'）
+		this.myChoice = this.chrom[this.adr];
+		// 利得関係初期化
+		payoff = scaledPayoff = cumPayoff = avePayoff = 0.0;
+	}
+
 	// 文字列初期化
 	public void initBinary(char[] in) {
 		double d;
@@ -109,5 +134,4 @@ public class CIndividual {
 	} // end of void initBinary()
 		//
 
-	
 }
