@@ -17,6 +17,15 @@ public class CPopulation {
 		mAve = mDev = mMax = mMin = 0.0;
 		mSigma = 0.0;
 	} // end of constructor
+	
+	//集団の初期化
+	public void initialize() {
+		for(int i=0;i<this.member.length;i++) {
+			this.member[i].initialize();
+		}
+		mAve = mDev = mMax = mMin = 0.0;
+		mSigma = 0.0;
+	}
 
 	// 統計値計算：平均
 	public void calcStat() {
@@ -25,6 +34,7 @@ public class CPopulation {
 		// 平均
 		double sum = 0.0;
 		for (int i = 0; i < this.popSize; i++) {
+			//System.out.println("member["+i+"]="+this.member[i].getAvePayoff());
 			sum += this.member[i].getAvePayoff();
 		}
 		this.mAve = sum / this.popSize;

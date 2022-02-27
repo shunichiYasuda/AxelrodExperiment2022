@@ -13,26 +13,26 @@ public class MethodsTest {
 		String pattern2 = new String("[01]0011[01]");
 		String pattern3 = new String("[01]1100[01]");
 		String pattern4 = new String("[01]1111[01]");
-		//4つのパターンのどれでも当たれば出力することにして
-		String str = new String("111001");
-		for(int i=0;i<20;i++) {
-			//initBinary(mem);
-			// str = mem.toString();
-			//
-			if(str.matches(pattern1)) {
-				System.out.println(str);
-			}
-			if(str.matches(pattern2)) {
-				System.out.println(str);
-			}
-			if(str.matches(pattern3)) {
-				System.out.println(str);
-			}
-			if(str.matches(pattern4)) {
-				System.out.println(str);
+		String pattern5 = new String("0[01]0[01]0[01]");
+		//当たれば出力することにして
+		//String str = new String("111001");
+		boolean flag = true;
+		while(flag) {
+			initBinary(mem);
+			System.out.print(new String(mem)+":");
+			for(int i=0;i<mem.length;i+=2) {
+				//System.out.println("i="+i+","+(i+1));
+				if(!different(mem[i],mem[i+1])) {
+					flag = false;
+				}
 			}
 		}
-
+	}
+	//
+	public static boolean different(char c1,char c2) {
+		boolean r = true;
+		if(c1 == c2) r = false;
+		return r;
 	}
 	// 文字列初期化
 		public static void initBinary(char[] in) {

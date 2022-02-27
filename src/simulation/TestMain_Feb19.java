@@ -19,12 +19,13 @@ public class TestMain_Feb19 {
 
 		// 集団の平均利得等統計値を計算する。
 		pop.calcStat();
+		System.out.println("集団平均値="+pop.mAve);
 		// また、スケーリングを行う
 		pop.scaling();
 		// 総当たり戦およびスケーリングが終わったので確認する
 		for (CIndividual m : pop.member) {
 			System.out.println(m.getAvePayoff());
-			System.out.println(m.getScaledPayoff());
+			//System.out.println(m.getScaledPayoff());
 		}
 
 	}

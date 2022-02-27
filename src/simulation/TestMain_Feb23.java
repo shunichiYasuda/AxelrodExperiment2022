@@ -24,7 +24,7 @@ public class TestMain_Feb23 {
 		// 集団の平均利得等統計値を計算する。
 		pop.calcStat();
 		// また、スケーリングを行う
-		pop.scaling();
+		//pop.scaling();
 		// scaling payoff に基づいて parents リストを作る。
 		// 親リスト。
 		List<Integer> parentsList = new ArrayList<Integer>();

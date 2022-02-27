@@ -29,6 +29,21 @@ public class CIndividual {
 		payoff = scaledPayoff = cumPayoff = avePayoff = 0.0;
 	}// end of constructor
 
+	//自分自身の初期化
+	public void initialize() {
+		initBinary(this.chrom);
+		// 染色体の最初の 2*PRE分を対戦履歴として memRecにコピー
+		for (int i = 0; i < memRec.length; i++) {
+			this.memRec[i] = this.chrom[i];
+		}
+		// 記憶が指し示す染色体上のアドレス 0から数えるので、配列のアドレスになる（ビットを数えるときに注意）
+		String tmp = new String(this.memRec);
+		this.adr = Integer.parseInt(tmp, 2);
+		// そのアドレスにある行動（0:協力'C', 1：裏切り'D'）
+		this.myChoice = this.chrom[this.adr];
+		// 利得関係初期化
+		payoff = scaledPayoff = cumPayoff = avePayoff = 0.0;
+	}
 	// setter
 	public void setPayoff(double p) {
 		// ゲームの利得がはいってくる、ということはゲームが1回終わったということなので
@@ -118,6 +133,8 @@ public class CIndividual {
 		this.myChoice = this.chrom[this.adr];
 		// 利得関係初期化
 		payoff = scaledPayoff = cumPayoff = avePayoff = 0.0;
+		//ゲームカウントも初期化
+		this.gameCount = 0;
 	}
 
 	// 文字列初期化
