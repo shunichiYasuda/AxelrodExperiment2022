@@ -217,7 +217,7 @@ public class TestMain_Feb27 {
 				// 一回の実験がおわったら、協力への収束があった実験のみ記録をとる。
 			if (convergeFlag) {
 				// 平均値を平均値テーブルに保存,集団の状態記録をテーブルに保存、
-				//記憶パターン別個体数の各テーブルに保存
+				// 記憶パターン別個体数の各テーブルに保存
 				for (int i = 0; i < aveTable.length; i++) {
 					aveTable[i][exp] = tmpAve[i];
 					popStateTable[i][exp] = popState[i];
@@ -230,16 +230,21 @@ public class TestMain_Feb27 {
 				exp++;
 			}
 			wholeCount++;
-			//次の実験のために集団を初期化
+			// 次の実験のために集団を初期化
 			pop.initialize();
 		} // 実験ループの終わり
-		//check テーブルを表示させてみる。
-		for(int i=0;i<GEN;i++) {
-			for(int j=0;j<EXP;j++) {
-				System.out.print("\t"+memBasedContraryTable[i][j]);
+
+		// データをファイルに書き込む
+		// 規定回数収束した実験を得た、もしくは規定回数の実験が終わったら、平均値をファイルに書き出す
+		for (int i = 0; i < aveTable.length; i++) {
+			for (int j = 0; j < aveTable[i].length; j++) {
+				pwAve.print(round(aveTable[i][j]) + "\t");
 			}
-			System.out.println();
+			pwAve.println("");
 		}
+
+		//
+
 		closeFiles();
 
 	}
