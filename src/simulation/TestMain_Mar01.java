@@ -47,14 +47,11 @@ public class TestMain_Mar01 {
 		char[] popState = new char[GEN];
 		// 集団の状態記録を EXP分保存するテーブル
 		char[][] popStateTable = new char[GEN][EXP];
-		// Type別個体数記録ファイルの先頭に世代数と実験回数を書いておく。
-		// 処理ソフトで使うため
-		pwType.println("GEN\tLOOP");
-		pwType.println(GEN + "\t" + EXP);
 		// Type別個体数を入れる一時配列。各世代ごとに記録する。
 		// 0番目：あまのじゃく、1番目お人好し、2番目裏切り者、3番目TFT
 		// 4番目遺伝子型からみたTFT,5番目 All_0,6番目All_1
-		// All_0 は染色体の9割以上が0，All_1 は1。Mar 01
+		// All_0 は記憶領域の全てが0，All_1 は1。Mar 01
+		// 世代数と実験回数は処理ソフトの方で設定するように変更 Mar01
 		int[][] typeCountTable = new int[GEN][7];
 		double[][] typeRatioTable = new double[GEN][7]; // タイプ別個体数の比率 Mar01
 		// 集団が協力へ収束したかどうかを判定するフラグ。このフラグが立っている実験を
@@ -155,13 +152,21 @@ public class TestMain_Mar01 {
 				// このタイミングで染色体を調査し、TFT・あまのじゃく・裏切り者・お人好し個体をカウントする必要がある
 				// Type別個体数を入れる一時配列にいれる。
 				// 0番目：あまのじゃく、1番目お人好し、2番目裏切り者、3番目TFT
-				typeRatioTable[gen][0] = (double)countMemBasedContrary()/POPSIZE;
-				typeRatioTable[gen][1] = (double)countMemBasedYesMan()/POPSIZE;
-				typeRatioTable[gen][2] = (double)countMemBasedTraitor()/POPSIZE;
-				typeRatioTable[gen][3] = (double)countMemBasedTFT()/POPSIZE;
-				typeRatioTable[gen][4] = (double)countGtypeBasedTFT()/POPSIZE;
-				typeRatioTable[gen][5] = (double)almostAll('0')/POPSIZE;
-				typeRatioTable[gen][6] = (double)almostAll('1')/POPSIZE;
+				typeRatioTable[gen][0] = (double) countMemBasedContrary() / (double) POPSIZE;
+				typeRatioTable[gen][1] = (double) countMemBasedYesMan() / (double) POPSIZE;
+				typeRatioTable[gen][2] = (double) countMemBasedTraitor() / (double) POPSIZE;
+				typeRatioTable[gen][3] = (double) countMemBasedTFT() / (double) POPSIZE;
+				typeRatioTable[gen][4] = (double) countGtypeBasedTFT() / (double) POPSIZE;
+				typeRatioTable[gen][5] = (double) almostAll('0') / (double) POPSIZE;
+				typeRatioTable[gen][6] = (double) almostAll('1') / (double) POPSIZE;
+				//
+				typeCountTable[gen][0] = countMemBasedContrary();
+				typeCountTable[gen][1] = countMemBasedYesMan();
+				typeCountTable[gen][2] = countMemBasedTraitor();
+				typeCountTable[gen][3] = countMemBasedTFT();
+				typeCountTable[gen][4] = countGtypeBasedTFT();
+				typeCountTable[gen][5] = almostAll('0');
+				typeRatioTable[gen][6] = almostAll('1');
 				//
 				// 親リスト。
 				List<Integer> parentsList = new ArrayList<Integer>();
@@ -195,11 +200,11 @@ public class TestMain_Mar01 {
 					aveTable[i][exp] = tmpAve[i];
 					popStateTable[i][exp] = popState[i];
 				}
-				// 記憶パターンによるタイプ別個体数をファイルに書き出す。
+				// 記憶パターンによるタイプ別個体数の比率をファイルに書き出す Mar01
 				for (int i = 0; i < GEN; i++) {
-					pwType.print(typeCountTable[i][0]);
-					for (int j = 1; j < 4; j++) {
-						pwType.print("\t" + typeCountTable[i][j]);
+					pwType.print(typeRatioTable[i][0]);
+					for (int j = 1; j < 7; j++) {
+						pwType.print("\t" + typeRatioTable[i][j]);
 					}
 					pwType.println();
 				}
@@ -294,32 +299,31 @@ public class TestMain_Mar01 {
 		closeFiles();
 	}// end of main()
 
-	// 遺伝子型のほとんどが '0' か'1' である個体数をカウントする
+	// 記憶領域がすべて'0'かすべて’1’である個体数を数える。
 	private static int almostAll(char in) {
-		
+
 		if ((in == '0') || (in == '1')) {
-			double level = 0.9; // 判定のレベル
+			double level = 1.0; // 判定のレベル
 			int count = 0;
 			// 1個体ずつをチェック
 			for (int m = 0; m < POPSIZE; m++) {
 				int almost = 0;
-				// 遺伝子座をひとつずつチェックする
-				for (char c : pop.member[m].chrom) {
+				// 記憶領域をひとつずつチェックする
+				for (char c : pop.member[m].memRec) {
 					if (c == in)
 						almost++;
 				}
-				// チェックの結果、遺伝子座の9割以上であれば「ほとんど'0'」
+				// チェックの結果、記憶領域がすべて同じならカウントする
 				double checkRatio = almost / (double) CHeader.LENGTH;
-				if (checkRatio > level)
+				if (almost == CHeader.MEM)
 					count++;
 			}
 			return count;
-		}else {
+		} else {
 			System.out.println("another char is in almostAll()");
 			return -1;
 		}
 
-		
 	}
 
 	// 記憶パターンから「あまのじゃく」を見つけてカウントする
@@ -434,13 +438,15 @@ public class TestMain_Mar01 {
 					countCoop++;
 				}
 			}
-			if (countCoop > 6)
+			if (countCoop > 7)
 				coopFlag = true;
-			if (countDefect > 6)
+			if (countDefect > 7)
 				defectFlag = true;
 			if (coopFlag && defectFlag) {
 				count++;
-				System.out.println("Find TFT in gtype");
+//				System.out.print("Find TFT in gtype:");
+//				String tmp = new String(tmpChrom);
+//				System.out.println(tmp);
 			}
 		}
 		return count;
@@ -543,7 +549,8 @@ public class TestMain_Mar01 {
 			char[] parent1 = parentsChrom.get(m).toCharArray();
 			char[] parent2 = parentsChrom.get(m + 1).toCharArray();
 			Random randSeed = new Random();
-			//
+			// クロスオーバー確率はAxelrod 原論文では「世代ごと染色体ごとに平均的に1クロスオーバー」となっている
+			// しかしクロスオーバーは染色体ごとにたかだか1回しかおこらないので平均的に1回の意味がわからない
 			if (bingo(CHeader.crossProb)) {
 				int point = randSeed.nextInt(CHeader.LENGTH);
 				// まったく入れ替わらない・全部入れ替わるが起きるといやなので
@@ -564,19 +571,39 @@ public class TestMain_Mar01 {
 
 	// 突然変異メソッド
 	private static void mutation() {
-		// parentsChrom に対して処理をする。
+		// Axelrod 原論文にしたがって処理を変更する Mar01
+		// Axelrod の記述によれば、「1つの染色体が1世代で1/2の確率で突然変異を起こす」とあるが、
+		// 染色体の内いくつの遺伝子座が反転するのか明確ではない。
+		// ここでは、1世代で20個体の全てが1/2の確率で突然変異を起こすが、遺伝子座の反転確率は
+		// 遺伝子数（染色体の長さ）文の1としてみる。
 		for (String s : parentsChrom) {
-			char[] tmp = s.toCharArray();
-			for (int i = 0; i < tmp.length; i++) {
-				if (bingo(CHeader.mutProb)) {
-					if (tmp[i] == '1') {
-						tmp[i] = '0';
-					} else {
-						tmp[i] = '1';
+			if (bingo(CHeader.mutProb)) { // この染色体は突然変異を起こす。
+				char[] tmp = s.toCharArray();
+				for (int i = 0; i < tmp.length; i++) {
+					if (bingo(1.0 / (double) CHeader.LENGTH)) {
+						if (tmp[i] == '1') {
+							tmp[i] = '0';
+						} else {
+							tmp[i] = '1';
+						}
 					}
-				}
-			} // end of if(突然変異がビンゴ
-		} // list にあるすべての染色体について突然変異が終了。
+				}//end of for(各遺伝子座について
+			}//end of if(突然変異を起こした場合
+		}//一人の親に対して
+
+//		// parentsChrom に対して処理をする。
+//		for (String s : parentsChrom) {
+//			char[] tmp = s.toCharArray();
+//			for (int i = 0; i < tmp.length; i++) {
+//				if (bingo(CHeader.mutProb)) {
+//					if (tmp[i] == '1') {
+//						tmp[i] = '0';
+//					} else {
+//						tmp[i] = '1';
+//					}
+//				}
+//			} // end of if(突然変異がビンゴ
+//		} // list にあるすべての染色体について突然変異が終了。
 	} // end of mutation()
 
 	// 親を作るメソッド
@@ -717,10 +744,12 @@ public class TestMain_Mar01 {
 		}
 	}
 
-	// 実数値を有効桁（小数点以下3桁）で揃えるためのメソッド
+	// 実数値を有効桁（小数点以下2桁）で揃えるためのメソッド
+	// 処理ソフトで描画するときに使えるピクセル数はたてよこ1000は難しい
+	// 100分の1を1ピクセルに当てた方がわかりやすい。Mar01
 	public static double round(double in) {
 		double after = 0.0;
-		after = new BigDecimal(String.valueOf(in)).setScale(3, RoundingMode.HALF_UP).doubleValue();
+		after = new BigDecimal(String.valueOf(in)).setScale(2, RoundingMode.HALF_UP).doubleValue();
 		return after;
 	}
 
