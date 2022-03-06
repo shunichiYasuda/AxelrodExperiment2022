@@ -30,7 +30,8 @@ public class SampleMake_Mar04 {
 	// loop の回数。main 以外でも必要なので
 	static int wholeCount;
 	public static void main(String[] args) {
-
+		//
+		System.out.println("MEM= "+CHeader.MEM);
 		// 記録ファイルの準備
 		makeDate();
 		makeFiles();
@@ -51,8 +52,9 @@ public class SampleMake_Mar04 {
 		// 4番目遺伝子型からみたTFT,5番目 All_0,6番目All_1
 		// All_0 は記憶領域の全てが0，All_1 は1。Mar 01
 		// 世代数と実験回数は処理ソフトの方で設定するように変更 Mar01
-		int[][] typeCountTable = new int[GEN][7];
-		double[][] typeRatioTable = new double[GEN][7]; // タイプ別個体数の比率 Mar01
+		//4番目の遺伝子型からみたTFTはほぼないので排除。4番目がAll_0,5番目がAll_1 Mar05
+		int[][] typeCountTable = new int[GEN][6];
+		double[][] typeRatioTable = new double[GEN][6]; // タイプ別個体数の比率 Mar01
 		// 集団が協力へ収束したかどうかを判定するフラグ。このフラグが立っている実験を
 		// 収束実験と判定してさまざまな状況を記録する。
 		boolean convergeFlag = false;
@@ -151,21 +153,22 @@ public class SampleMake_Mar04 {
 				// このタイミングで染色体を調査し、TFT・あまのじゃく・裏切り者・お人好し個体をカウントする必要がある
 				// Type別個体数を入れる一時配列にいれる。
 				// 0番目：あまのじゃく、1番目お人好し、2番目裏切り者、3番目TFT
-				typeRatioTable[gen][0] = (double) countMemBasedContrary() / (double) POPSIZE;
-				typeRatioTable[gen][1] = (double) countMemBasedYesMan() / (double) POPSIZE;
-				typeRatioTable[gen][2] = (double) countMemBasedTraitor() / (double) POPSIZE;
-				typeRatioTable[gen][3] = (double) countMemBasedTFT() / (double) POPSIZE;
-				typeRatioTable[gen][4] = (double) countGtypeBasedTFT() / (double) POPSIZE;
-				typeRatioTable[gen][5] = (double) almostAll('0') / (double) POPSIZE;
-				typeRatioTable[gen][6] = (double) almostAll('1') / (double) POPSIZE;
+				//比率を % に変更 Mar06
+				typeRatioTable[gen][0] =100*( (double) countMemBasedContrary() / (double) POPSIZE);
+				typeRatioTable[gen][1] =100*( (double) countMemBasedYesMan() / (double) POPSIZE);
+				typeRatioTable[gen][2] = 100*( (double) countMemBasedTraitor() / (double) POPSIZE);
+				typeRatioTable[gen][3] = 100*( (double) countMemBasedTFT() / (double) POPSIZE);
+				//typeRatioTable[gen][4] = 100*( (double) countGtypeBasedTFT() / (double) POPSIZE);
+				typeRatioTable[gen][4] =100*(  (double) almostAll('0') / (double) POPSIZE);
+				typeRatioTable[gen][5] = 100*( (double) almostAll('1') / (double) POPSIZE);
 				//
 				typeCountTable[gen][0] = countMemBasedContrary();
 				typeCountTable[gen][1] = countMemBasedYesMan();
 				typeCountTable[gen][2] = countMemBasedTraitor();
 				typeCountTable[gen][3] = countMemBasedTFT();
-				typeCountTable[gen][4] = countGtypeBasedTFT();
-				typeCountTable[gen][5] = almostAll('0');
-				typeRatioTable[gen][6] = almostAll('1');
+				//typeCountTable[gen][4] = countGtypeBasedTFT();
+				typeCountTable[gen][4] = almostAll('0');
+				typeRatioTable[gen][5] = almostAll('1');
 				//
 				// 親リスト。
 				List<Integer> parentsList = new ArrayList<Integer>();
@@ -201,9 +204,9 @@ public class SampleMake_Mar04 {
 				}
 				// 記憶パターンによるタイプ別個体数の比率をファイルに書き出す Mar01
 				for (int i = 0; i < GEN; i++) {
-					pwType.print(typeRatioTable[i][0]);
-					for (int j = 1; j < 7; j++) {
-						pwType.print("\t" + typeRatioTable[i][j]);
+					pwType.print(round(typeRatioTable[i][0]));
+					for (int j = 1; j < 6; j++) {
+						pwType.print("\t" + round(typeRatioTable[i][j]));
 					}
 					pwType.println();
 				}
@@ -300,7 +303,6 @@ public class SampleMake_Mar04 {
 	
 	// 記憶領域がすべて'0'かすべて’1’である個体数を数える。
 		private static int almostAll(char in) {
-
 			if ((in == '0') || (in == '1')) {
 				double level = 1.0; // 判定のレベル
 				int count = 0;
@@ -313,9 +315,14 @@ public class SampleMake_Mar04 {
 							almost++;
 					}
 					// チェックの結果、記憶領域がすべて同じならカウントする
-					double checkRatio = almost / (double) CHeader.LENGTH;
-					if (almost == CHeader.MEM)
+					double checkRatio = almost / (double) CHeader.MEM;
+					if (almost == CHeader.MEM) {
 						count++;
+//						for(int i=0;i<CHeader.MEM;i++) {
+//							System.out.print(pop.member[m].memRec[i]);
+//						}
+//						System.out.println(":count= "+count);
+					}
 				}
 				return count;
 			} else {
@@ -437,9 +444,10 @@ public class SampleMake_Mar04 {
 						countCoop++;
 					}
 				}
-				if (countCoop > 7)
+				//違うビットが4つ未満である。
+				if (countCoop < 4 )
 					coopFlag = true;
-				if (countDefect > 7)
+				if (countDefect < 4)
 					defectFlag = true;
 				if (coopFlag && defectFlag) {
 					count++;
