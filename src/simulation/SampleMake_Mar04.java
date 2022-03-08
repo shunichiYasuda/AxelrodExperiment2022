@@ -168,7 +168,7 @@ public class SampleMake_Mar04 {
 				typeCountTable[gen][3] = countMemBasedTFT();
 				//typeCountTable[gen][4] = countGtypeBasedTFT();
 				typeCountTable[gen][4] = almostAll('0');
-				typeRatioTable[gen][5] = almostAll('1');
+				typeCountTable[gen][5] = almostAll('1');
 				//
 				// 親リスト。
 				List<Integer> parentsList = new ArrayList<Integer>();
