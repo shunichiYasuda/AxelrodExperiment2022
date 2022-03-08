@@ -1,0 +1,17 @@
+experiment date:Mar8_2022:15:46:11
+size of population: 20
+prob of cross over = 0.05
+prob of mutant = 0.5
+length  of genotype = 70
+Generation = 100
+total 30 experiments are needed for 3 converge.
+loop	firstGen	totalCoop	maxKeep
+0	8	92	92
+1	46	54	54
+2	78	22	22
+ave first gen =44.0
+ave max keep = 56.0
+ave total coop =  56.0
+min first gen of this exp  0-th =8
+max keep of this exp  0-th = 92
+max total coop  of this exp  0-th = 92
