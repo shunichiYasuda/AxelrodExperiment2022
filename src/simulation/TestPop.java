@@ -11,8 +11,10 @@ public class TestPop {
 		for (CIndividual m : pop.member) {
 			printRec(m.getMemory());
 			System.out.print("\t");
+			printRec(m.getStrategicRec());
+			System.out.println();
 			printRec(m.getChrom());
-			System.out.print("\t" + m.getAdr());
+			System.out.print("\t" + m.getAdr()+"\t"+m.getChoice());
 			System.out.println();
 		}
 	}
