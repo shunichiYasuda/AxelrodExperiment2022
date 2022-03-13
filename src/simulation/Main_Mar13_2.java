@@ -13,15 +13,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class Main_Mar11_2 {
+public class Main_Mar13_2 {
 	static CPopulation pop;
-	static final int POPSIZE = 100;
-	static final int GEN = 50; // 世代数
-	static final int EXP = 10; // 収束した実験回数
+	static final int POPSIZE = 50;
+	static final int GEN = 100; // 世代数
+	static final int EXP = 10; // 協力と裏切りの両方の収束が見られた実験のみ
 	static String dateName;// ファイルの先頭に付加する日時
 	static String timeStamp; // 実験記録につける日時秒。
 	// static String memo = "交叉確率平均10個体,突然変異：全遺伝子座5%"; //実験記録に付けるメモ
-	static String memo = "交叉確率平均1個体,突然変異：個体1/2,遺伝子座1カ所"; // 実験記録に付けるメモ
+	static String memo = "交叉確率平均1個体、突然変異2分の1の1箇所" + "\n収束した実験以外の記録も取りたい。"; // 実験記録に付けるメモ
 	// typeFile は個体の「タイプ（あまのじゃく、裏切り者、TFT、お人好し）」の数を記録
 	static File aveFile, typeFile, statFile;
 	static PrintWriter pwAve, pwType, pwStat;
@@ -49,27 +49,23 @@ public class Main_Mar11_2 {
 		// 集団の状態記録を EXP分保存するテーブル
 		char[][] popStateTable = new char[GEN][EXP];
 		// Type別個体数を入れる一時配列。各世代ごとに記録する。
-		// 0番目：あまのじゃく、1番目お人好し、2番目裏切り者、3番目TFT
-		// 4番目遺伝子型からみたTFT,5番目 All_0,6番目All_1
-		// All_0 は記憶領域の全てが0，All_1 は1。Mar 01
-		// 世代数と実験回数は処理ソフトの方で設定するように変更 Mar01
-		// 4番目の遺伝子型からみたTFTはほぼないので排除。4番目がAll_0,5番目がAll_1 Mar05
 		int[][] typeCountTable = new int[GEN][6];
 		double[][] typeRatioTable = new double[GEN][6]; // タイプ別個体数の比率 Mar01
-		// 集団が協力へ収束したかどうかを判定するフラグ。このフラグが立っている実験を
-		// 収束実験と判定してさまざまな状況を記録する。
+		// 集団が協力へ収束したかどうかを判定するフラグ。
 		boolean convergeFlag = false;
+		// 集団が裏切りへ収束したかどうかを判定するフラグ。
+		boolean convergeDefectFlag = false;
+		// 各実験での収束状況を記録する。C:協力,D:裏切り,B:両方、N:なんもなし
+		char[] convergeRecord = new char[EXP];
+		initialize(convergeRecord); // 初期状態はすべて N 。
 		// すべての実験に関する平均値推移を記録する配列の初期化
 		aveTable = new double[GEN][EXP];
 		initialize(aveTable);
-
 		// 一時的な平均値の記録
 		double[] tmpAve = new double[GEN];
-
 		// 実験回数のインデックス
-		int exp = 0; // 収束した実験回数を expで数える。
-		wholeCount = 0; // EXP回収束実験を得るのに何回のループが必要だったか
-		while (exp < EXP) { // 協力への収束があった実験のみ記録をとる。
+		int exp = 0; // 収束に関係なく記録を取る。
+		while (exp < EXP) {
 			// 集団の生成
 			pop = new CPopulation(POPSIZE);
 			// 一時的平均値 実験ごとに初期化する
@@ -80,6 +76,7 @@ public class Main_Mar11_2 {
 			stateFlag = 'N';
 			// 収束フラグを初期化
 			convergeFlag = false;
+			convergeDefectFlag = false;
 			// 集団状態はすべての世代で 'N'
 			initialize(popState);
 			// Type別個体数を入れる一時配列の初期化
@@ -94,7 +91,10 @@ public class Main_Mar11_2 {
 				while (p1 < POPSIZE - 1) {
 					for (int m = (p1 + 1); m < POPSIZE; m++) {
 						int p2 = m;
-						game(p1, p2);
+						// game の回数を増やす
+						for (int n = 0; n < 150; n++) {
+							game(p1, p2);
+						}
 					}
 					p1++;
 				}
@@ -137,7 +137,6 @@ public class Main_Mar11_2 {
 				if (cntCoop >= checkCount) {
 					// 収束フラグをセットする。
 					convergeFlag = true;
-					// System.out.println("収束：gen=" + gen + "\t実験回数：exp=" + exp);
 					// 集団の状態は
 					popState[gen] = 'C';
 				}
@@ -145,16 +144,14 @@ public class Main_Mar11_2 {
 				if (cntDefect >= checkCount) {
 					// 状況は裏切り
 					popState[gen] = 'D';
+					// 裏切り収束フラグをセットする。
+					convergeDefectFlag = true;
 				}
 				if (cntNone >= checkCount) {
 					popState[gen] = 'N';
 				}
 				// 収束判定の終わり
-
 				// このタイミングで染色体を調査し、TFT・あまのじゃく・裏切り者・お人好し個体をカウントする必要がある
-				// Type別個体数を入れる一時配列にいれる。
-				// 0番目：あまのじゃく、1番目お人好し、2番目裏切り者、3番目TFT
-				// 比率を % に変更 Mar06
 				typeRatioTable[gen][0] = 100 * ((double) countMemBasedContrary() / (double) POPSIZE);
 				typeRatioTable[gen][1] = 100 * ((double) countMemBasedYesMan() / (double) POPSIZE);
 				typeRatioTable[gen][2] = 100 * ((double) countMemBasedTraitor() / (double) POPSIZE);
@@ -167,14 +164,6 @@ public class Main_Mar11_2 {
 				}
 				typeRatioTable[gen][4] = 100 * ((double) almostAll('0') / (double) POPSIZE);
 				typeRatioTable[gen][5] = 100 * ((double) almostAll('1') / (double) POPSIZE);
-				//
-				typeCountTable[gen][0] = countMemBasedContrary();
-				typeCountTable[gen][1] = countMemBasedYesMan();
-				typeCountTable[gen][2] = countMemBasedTraitor();
-				typeCountTable[gen][3] = countMemBasedTFT();
-				// typeCountTable[gen][4] = countGtypeBasedTFT();
-				typeCountTable[gen][4] = almostAll('0');
-				typeCountTable[gen][5] = almostAll('1');
 				//
 				// 親リスト。
 				List<Integer> parentsList = new ArrayList<Integer>();
@@ -199,9 +188,11 @@ public class Main_Mar11_2 {
 					pop.member[m].replace(tmp);
 				}
 				gen++;
-			} // 世代ループの終わり。
-				// 一回の実験がおわったら、協力への収束があった実験のみ記録をとる。
-			if (convergeFlag) {
+			} // end of while ( gen < GEN ...世代の終わり。
+				// 収束条件によってファイルに書き込む
+				// この実験では協力への収束があったか？裏切りへの収束はあったか？あるいは両方？
+			if (convergeFlag && convergeDefectFlag) {// 両方あった
+				convergeRecord[exp] = 'B';
 				// 平均値を平均値テーブルに保存,集団の状態記録をテーブルに保存、
 				// 行が世代、列が実験
 				for (int i = 0; i < aveTable.length; i++) {
@@ -216,33 +207,31 @@ public class Main_Mar11_2 {
 					}
 					pwType.println();
 				}
-				System.out.println("loop =" + exp + "\twholeCount =" + wholeCount);
-				// カウントを進める
+				System.out.println("両方に収束："+ wholeCount);
+				// このときだけ実験回数を進める。
 				exp++;
 			}
-			wholeCount++;
 			// 次の実験のために集団を初期化
 			pop.initialize();
-		} // 実験ループの終わり
-
-		// データをファイルに書き込む
-		// 規定回数収束した実験を得た、もしくは規定回数の実験が終わったら、平均値をファイルに書き出す
+			// 1実験の終わり。
+			wholeCount++;
+		} // end of while(実験回数）
+			// すべての実験が終わった。
+			// データをファイルに書き込む
+			// 規定回数の実験が終わったら、平均値をファイルに書き出す
 		for (int i = 0; i < aveTable.length; i++) {
 			for (int j = 0; j < aveTable[i].length; j++) {
 				pwAve.print(round(aveTable[i][j]) + "\t");
 			}
 			pwAve.println("");
 		}
-
 		// 実験の基礎情報を作る
 		pwStat.println("experiment date:" + timeStamp);
 		pwStat.println("size of population: " + POPSIZE);
-		// pwStat.println("prob of cross over = " + CHeader.crossProb);
-		// pwStat.println("prob of mutant = " + CHeader.mutProb);
 		pwStat.println("length  of genotype = " + CHeader.LENGTH);
 		pwStat.println("Generation = " + GEN);
+		pwStat.println("EXP =" + EXP+" needed "+wholeCount+"times.");
 		pwStat.println(memo);
-		pwStat.println("total " + wholeCount + " experiments are needed for " + EXP + " converge.");
 		// 集団の状態記録から、協力の持続期間について情報を得る。
 		pwStat.println("loop\tfirstGen\ttotalCoop\tmaxKeep");
 		int keep, maxKeep, totalCoop, firstGen;
@@ -306,9 +295,9 @@ public class Main_Mar11_2 {
 				+ maxMaxExp + "-th = " + maxMaxKeep + "\nmax total coop  of this exp  " + maxTotalExp + "-th = "
 				+ maxTotalCoop);
 		closeFiles();
+
 	}// end of main()
 
-	// 染色体がすべて'0' である個体を数える
 	private static int all0Chrom() {
 		int r = 0;
 		// 1個体ずつをチェック
@@ -364,9 +353,9 @@ public class Main_Mar11_2 {
 			char[] memory = pop.member[m].memRec;
 			String strMemory = new String(memory);
 			boolean flag = true;
-			// 配列の先頭から2つずつチェックして、それが一つでも同じものがあれば
+			// 配列の1bit 目から2つずつチェックして、それが一つでも同じものがあれば
 			// flag は false である。あまのじゃくではない。
-			for (int i = 0; i < memory.length; i += 2) {
+			for (int i = 1; i < memory.length - 1; i += 2) {
 				if (!different(memory[i], memory[i + 1])) {
 					flag = false;
 				}
@@ -573,8 +562,9 @@ public class Main_Mar11_2 {
 			// クロスオーバー確率はAxelrod 原論文では「世代ごと染色体ごとに平均的に1クロスオーバー」となっている
 			// しかしクロスオーバーは染色体ごとにたかだか1回しかおこらないので平均的に1回の意味がわからない
 			// ここでの場合分けは個体数20のケースでしか行わない。
-			// if (bingo(1.0 / 2.0)) { // 個体数20で1/2の確率だから、各世代平均10個体
-			if (bingo(1.0 / (double)POPSIZE)) { // 個体数分の1確率だから、各世代平均1個体
+			// if (bingo(10 /(double) POPSIZE) ) { // 個体数分の10の確率だから、各世代平均10個体
+			if (bingo(1.0 / (double) POPSIZE)) { // 個体数分の1確率だから、各世代平均1個体
+				// if(bingo(CHeader.mutProb)) {//これまでの実験に戻す
 				// if(bingo(1.0)) { //交叉確率100%
 				int point = randSeed.nextInt(CHeader.LENGTH);
 				// まったく入れ替わらない・全部入れ替わるが起きるといやなので
@@ -605,8 +595,8 @@ public class Main_Mar11_2 {
 				char[] tmp = s.toCharArray();
 				for (int i = 0; i < tmp.length; i++) {
 					// if(bingo(7.0/CHeader.LENGTH)){
-					//if (bingo(3.0 / CHeader.LENGTH)) {
-					if (bingo(1.0/CHeader.LENGTH)) {
+					// if (bingo(3.0 / CHeader.LENGTH)) {
+					if (bingo(1.0 / CHeader.LENGTH)) {
 						if (tmp[i] == '1') {
 							tmp[i] = '0';
 						} else {
@@ -617,19 +607,19 @@ public class Main_Mar11_2 {
 			} // end of if(突然変異を起こした場合
 		} // 一人の親に対して
 
-//			// parentsChrom に対して処理をする。
-//			for (String s : parentsChrom) {
-//				char[] tmp = s.toCharArray();
-//				for (int i = 0; i < tmp.length; i++) {
-//					if (bingo(0.05)) {
-//						if (tmp[i] == '1') {
-//							tmp[i] = '0';
-//						} else {
-//							tmp[i] = '1';
+//				// parentsChrom に対して処理をする。
+//				for (String s : parentsChrom) {
+//					char[] tmp = s.toCharArray();
+//					for (int i = 0; i < tmp.length; i++) {
+//						if (bingo(0.05)) {
+//							if (tmp[i] == '1') {
+//								tmp[i] = '0';
+//							} else {
+//								tmp[i] = '1';
+//							}
 //						}
-//					}
-//				} // end of if(突然変異がビンゴ
-//			} // list にあるすべての染色体について突然変異が終了。
+//					} // end of if(突然変異がビンゴ
+//				} // list にあるすべての染色体について突然変異が終了。
 	} // end of mutation()
 
 	// 親を作るメソッド
@@ -706,10 +696,6 @@ public class Main_Mar11_2 {
 		}
 		pop.member[p1].reMem(select_p2);
 		pop.member[p2].reMem(select_p1);
-		// ゲームカウントを増やす（修正：Feb19 2022 ）
-		// 下ゲームカウントはsetPayoff が呼ばれた際にその中でカウントが増える
-		// pop.member[p1].gameCount++;
-		// pop.member[p2].gameCount++;
 	}// end of game()
 		// 支援メソッド
 

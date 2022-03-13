@@ -13,15 +13,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class Main_Mar11_2 {
+public class Main_Mar12 {
 	static CPopulation pop;
 	static final int POPSIZE = 100;
-	static final int GEN = 50; // 世代数
-	static final int EXP = 10; // 収束した実験回数
+	static final int GEN = 400; // 世代数
+	static final int EXP = 100; // 収束した実験回数
 	static String dateName;// ファイルの先頭に付加する日時
 	static String timeStamp; // 実験記録につける日時秒。
 	// static String memo = "交叉確率平均10個体,突然変異：全遺伝子座5%"; //実験記録に付けるメモ
-	static String memo = "交叉確率平均1個体,突然変異：個体1/2,遺伝子座1カ所"; // 実験記録に付けるメモ
+	static String memo = "交叉確率平均1個体、突然変異2分の1の1箇所"; // 実験記録に付けるメモ
 	// typeFile は個体の「タイプ（あまのじゃく、裏切り者、TFT、お人好し）」の数を記録
 	static File aveFile, typeFile, statFile;
 	static PrintWriter pwAve, pwType, pwStat;
@@ -94,7 +94,10 @@ public class Main_Mar11_2 {
 				while (p1 < POPSIZE - 1) {
 					for (int m = (p1 + 1); m < POPSIZE; m++) {
 						int p2 = m;
-						game(p1, p2);
+						// game の回数を増やす
+						for (int n = 0; n < 150; n++) {
+							game(p1, p2);
+						}
 					}
 					p1++;
 				}
@@ -137,7 +140,6 @@ public class Main_Mar11_2 {
 				if (cntCoop >= checkCount) {
 					// 収束フラグをセットする。
 					convergeFlag = true;
-					// System.out.println("収束：gen=" + gen + "\t実験回数：exp=" + exp);
 					// 集団の状態は
 					popState[gen] = 'C';
 				}
@@ -306,9 +308,10 @@ public class Main_Mar11_2 {
 				+ maxMaxExp + "-th = " + maxMaxKeep + "\nmax total coop  of this exp  " + maxTotalExp + "-th = "
 				+ maxTotalCoop);
 		closeFiles();
-	}// end of main()
 
-	// 染色体がすべて'0' である個体を数える
+	}// end of main()
+		// 染色体がすべて'0' である個体を数える
+
 	private static int all0Chrom() {
 		int r = 0;
 		// 1個体ずつをチェック
@@ -573,9 +576,10 @@ public class Main_Mar11_2 {
 			// クロスオーバー確率はAxelrod 原論文では「世代ごと染色体ごとに平均的に1クロスオーバー」となっている
 			// しかしクロスオーバーは染色体ごとにたかだか1回しかおこらないので平均的に1回の意味がわからない
 			// ここでの場合分けは個体数20のケースでしか行わない。
-			// if (bingo(1.0 / 2.0)) { // 個体数20で1/2の確率だから、各世代平均10個体
-			if (bingo(1.0 / (double)POPSIZE)) { // 個体数分の1確率だから、各世代平均1個体
-				// if(bingo(1.0)) { //交叉確率100%
+			//if (bingo(10 /(double) POPSIZE) ) { // 個体数分の10の確率だから、各世代平均10個体
+			if (bingo(1.0 / (double) POPSIZE)) { // 個体数分の1確率だから、各世代平均1個体
+				// if(bingo(CHeader.mutProb)) {//これまでの実験に戻す
+			//if(bingo(1.0)) { //交叉確率100%
 				int point = randSeed.nextInt(CHeader.LENGTH);
 				// まったく入れ替わらない・全部入れ替わるが起きるといやなので
 				while (point == 0 || point == CHeader.LENGTH - 1) {
@@ -604,9 +608,9 @@ public class Main_Mar11_2 {
 			if (bingo(0.5)) { // この染色体は突然変異を起こす。
 				char[] tmp = s.toCharArray();
 				for (int i = 0; i < tmp.length; i++) {
-					// if(bingo(7.0/CHeader.LENGTH)){
+					//if(bingo(7.0/CHeader.LENGTH)){
 					//if (bingo(3.0 / CHeader.LENGTH)) {
-					if (bingo(1.0/CHeader.LENGTH)) {
+					if (bingo(1.0 / CHeader.LENGTH)) {
 						if (tmp[i] == '1') {
 							tmp[i] = '0';
 						} else {
@@ -617,19 +621,19 @@ public class Main_Mar11_2 {
 			} // end of if(突然変異を起こした場合
 		} // 一人の親に対して
 
-//			// parentsChrom に対して処理をする。
-//			for (String s : parentsChrom) {
-//				char[] tmp = s.toCharArray();
-//				for (int i = 0; i < tmp.length; i++) {
-//					if (bingo(0.05)) {
-//						if (tmp[i] == '1') {
-//							tmp[i] = '0';
-//						} else {
-//							tmp[i] = '1';
+//				// parentsChrom に対して処理をする。
+//				for (String s : parentsChrom) {
+//					char[] tmp = s.toCharArray();
+//					for (int i = 0; i < tmp.length; i++) {
+//						if (bingo(0.05)) {
+//							if (tmp[i] == '1') {
+//								tmp[i] = '0';
+//							} else {
+//								tmp[i] = '1';
+//							}
 //						}
-//					}
-//				} // end of if(突然変異がビンゴ
-//			} // list にあるすべての染色体について突然変異が終了。
+//					} // end of if(突然変異がビンゴ
+//				} // list にあるすべての染色体について突然変異が終了。
 	} // end of mutation()
 
 	// 親を作るメソッド
