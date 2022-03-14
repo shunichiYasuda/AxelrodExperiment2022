@@ -15,7 +15,7 @@ import java.util.Random;
 
 public class Main_Mar12 {
 	static CPopulation pop;
-	static final int POPSIZE = 20;
+	static final int POPSIZE = 50;
 	static final int GEN = 50; // 世代数
 	static final int EXP = 100; // 収束した実験回数
 	static String dateName;// ファイルの先頭に付加する日時
