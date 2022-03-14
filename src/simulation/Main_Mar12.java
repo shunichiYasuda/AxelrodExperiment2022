@@ -15,8 +15,8 @@ import java.util.Random;
 
 public class Main_Mar12 {
 	static CPopulation pop;
-	static final int POPSIZE = 100;
-	static final int GEN = 400; // 世代数
+	static final int POPSIZE = 20;
+	static final int GEN = 50; // 世代数
 	static final int EXP = 100; // 収束した実験回数
 	static String dateName;// ファイルの先頭に付加する日時
 	static String timeStamp; // 実験記録につける日時秒。
@@ -367,13 +367,14 @@ public class Main_Mar12 {
 			char[] memory = pop.member[m].memRec;
 			String strMemory = new String(memory);
 			boolean flag = true;
-			// 配列の先頭から2つずつチェックして、それが一つでも同じものがあれば
+			// 配列の1bit 目から2つずつチェックして、それが一つでも同じものがあれば
 			// flag は false である。あまのじゃくではない。
-			for (int i = 0; i < memory.length; i += 2) {
+			for (int i = 1; i < memory.length - 1; i += 2) {
 				if (!different(memory[i], memory[i + 1])) {
 					flag = false;
 				}
 			}
+
 			//
 			if (flag) { // 記憶パターンが指し示すポイントが、記憶の最後のビットとことなればあまのじゃく
 				int point = Integer.parseInt(strMemory, 2);
@@ -576,10 +577,10 @@ public class Main_Mar12 {
 			// クロスオーバー確率はAxelrod 原論文では「世代ごと染色体ごとに平均的に1クロスオーバー」となっている
 			// しかしクロスオーバーは染色体ごとにたかだか1回しかおこらないので平均的に1回の意味がわからない
 			// ここでの場合分けは個体数20のケースでしか行わない。
-			//if (bingo(10 /(double) POPSIZE) ) { // 個体数分の10の確率だから、各世代平均10個体
+			// if (bingo(10 /(double) POPSIZE) ) { // 個体数分の10の確率だから、各世代平均10個体
 			if (bingo(1.0 / (double) POPSIZE)) { // 個体数分の1確率だから、各世代平均1個体
 				// if(bingo(CHeader.mutProb)) {//これまでの実験に戻す
-			//if(bingo(1.0)) { //交叉確率100%
+				// if(bingo(1.0)) { //交叉確率100%
 				int point = randSeed.nextInt(CHeader.LENGTH);
 				// まったく入れ替わらない・全部入れ替わるが起きるといやなので
 				while (point == 0 || point == CHeader.LENGTH - 1) {
@@ -608,8 +609,8 @@ public class Main_Mar12 {
 			if (bingo(0.5)) { // この染色体は突然変異を起こす。
 				char[] tmp = s.toCharArray();
 				for (int i = 0; i < tmp.length; i++) {
-					//if(bingo(7.0/CHeader.LENGTH)){
-					//if (bingo(3.0 / CHeader.LENGTH)) {
+					// if(bingo(7.0/CHeader.LENGTH)){
+					// if (bingo(3.0 / CHeader.LENGTH)) {
 					if (bingo(1.0 / CHeader.LENGTH)) {
 						if (tmp[i] == '1') {
 							tmp[i] = '0';
