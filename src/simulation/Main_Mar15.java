@@ -13,15 +13,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class Main_Mar13 {
+public class Main_Mar15 {
 	static CPopulation pop;
-	static final int POPSIZE = 20;
-	static final int GEN = 50; // 世代数
-	static final int EXP = 20; // 収束した実験回数
+	static final int POPSIZE = 50;
+	static final int GEN = 100; // 世代数
+	static final int EXP = 100; // 集めたい状況はしたの condition で決定
 	static String dateName;// ファイルの先頭に付加する日時
 	static String timeStamp; // 実験記録につける日時秒。
 	// static String memo = "交叉確率平均10個体,突然変異：全遺伝子座5%"; //実験記録に付けるメモ
-	static String memo = "交叉確率平均1個体、突然変異2分の1の1箇所" + "\n収束した実験以外の記録も取りたい。"; // 実験記録に付けるメモ
+
 	// typeFile は個体の「タイプ（あまのじゃく、裏切り者、TFT、お人好し）」の数を記録
 	static File aveFile, typeFile, statFile, overlapFile;
 	static PrintWriter pwAve, pwType, pwStat, pwOverlap;
@@ -31,8 +31,16 @@ public class Main_Mar13 {
 	static double[][] aveTable;
 	// loop の回数。main 以外でも必要なので
 	static int wholeCount;
+	// 集めたい状況
+	static char condition = 'N';
+	static String memo = "集めたい収束状況は  " + condition + "  である。"; // 実験記録に付けるメモ
+//各実験の最後の世代における記憶領域と chrom の集中度を記録する。
+	static int[] centGeno = new int[EXP];
+	static int[] centMem = new int[EXP];
 
 	public static void main(String[] args) {
+		initialize(centGeno);
+		initialize(centMem);
 		// 記録ファイルの準備
 		makeDate();
 		makeFiles();
@@ -189,8 +197,7 @@ public class Main_Mar13 {
 				}
 				gen++;
 			} // end of while ( gen < GEN ...世代の終わり。
-
-			// この実験では協力への収束があったか？裏切りへの収束はあったか？あるいは両方？
+				// この実験では協力への収束があったか？裏切りへの収束はあったか？あるいは両方？
 			if (convergeFlag && convergeDefectFlag) {// 両方あった
 				convergeRecord[exp] = 'B';
 			} else {
@@ -201,48 +208,63 @@ public class Main_Mar13 {
 					convergeRecord[exp] = 'D';
 				}
 			}
-			System.out.println(exp + ":\t収束状況 " + convergeRecord[exp]);
-			// 最後の世代について遺伝子型と記憶領域の記録をとっておく。
-			List<String> genoType = new ArrayList<String>();
-			List<String> memType = new ArrayList<String>();
-			for (int i = 0; i < POPSIZE; i++) {
-				genoType.add(i, String.valueOf(pop.member[i].chrom));
-				memType.add(i, String.valueOf(pop.member[i].memRec));
+			if (!convergeFlag && !convergeDefectFlag) {
+				convergeRecord[exp] = 'N';
 			}
-			// メソッドから受け取るのは重複回数の配列だけでよい？
-			int[] overlapCount = new int[POPSIZE];
-			overlapCount = overlapCount(memType);
-			// 処理が長くなりそうなので結果は直接ファイルに書く。
-			// その処理
-			pwOverlap.println("-------------exp = " + exp + ":   "+convergeRecord[exp]+"-------------");
-			overlapPrint(memType, overlapCount);
-			// overlap が0でないものだけを出力
 
-			// すべての実験の記録をとる
-			// 平均値を平均値テーブルに保存,集団の状態記録をテーブルに保存、
-			// 行が世代、列が実験
-			for (int i = 0; i < aveTable.length; i++) {
-				aveTable[i][exp] = tmpAve[i];
-				popStateTable[i][exp] = popState[i];
-			}
-			// 記憶パターンによるタイプ別個体数の比率をファイルに書き出す Mar01
-			for (int i = 0; i < GEN; i++) {
-				pwType.print(round(typeRatioTable[i][0]));
-				for (int j = 1; j < 6; j++) {
-					pwType.print("\t" + round(typeRatioTable[i][j]));
+			// System.out.println(exp + ":\t収束状況 " + convergeRecord[exp]);
+			// 収束条件によってファイルに書き込む
+			// この実験では協力への収束があったか？裏切りへの収束はあったか？あるいは両方？
+			if (convergeRecord[exp] == condition) {// 集めたい状況だったら
+				// 最後の世代について遺伝子型と記憶領域の記録をとっておく。
+				List<String> genoType = new ArrayList<String>();
+				List<String> memType = new ArrayList<String>();
+				for (int i = 0; i < POPSIZE; i++) {
+					genoType.add(i, String.valueOf(pop.member[i].chrom));
+					memType.add(i, String.valueOf(pop.member[i].memRec));
 				}
-				pwType.println();
+				// 処理が長くなりそうなので結果は直接ファイルに書く。
+				pwOverlap.println("-------------exp = " + exp + ":   " + convergeRecord[exp] + "-------------");
+				// メソッドから受け取るのは重複回数の配列だけでよい？
+				int[] overlapCount = new int[POPSIZE];
+				overlapCount = overlapCount(memType);
+				overlapPrint(memType, overlapCount);
+				// overlapCount[0] にその実験での最大重複数が入っている
+				// System.out.println("max overlap="+overlapCount[0]);
+				centMem[exp] = overlapCount[0];
+				overlapCount = overlapCount(genoType);
+				overlapPrint(genoType, overlapCount);
+				centGeno[exp] = overlapCount[0];
+				// overlap が0でないものだけを出力
+				// 平均値を平均値テーブルに保存,集団の状態記録をテーブルに保存、
+				// 行が世代、列が実験
+				for (int i = 0; i < aveTable.length; i++) {
+					aveTable[i][exp] = tmpAve[i];
+					popStateTable[i][exp] = popState[i];
+				}
+				// 記憶パターンによるタイプ別個体数の比率をファイルに書き出す Mar01
+				for (int i = 0; i < GEN; i++) {
+					pwType.print(round(typeRatioTable[i][0]));
+					for (int j = 1; j < 6; j++) {
+						pwType.print("\t" + round(typeRatioTable[i][j]));
+					}
+					pwType.println();
+				}
+				System.out.println("収束：条件" + condition + "\texp=" + exp + " wholeCont=" + wholeCount);
+				// このときだけ実験回数を進める。
+				exp++;
 			}
-
 			// 次の実験のために集団を初期化
 			pop.initialize();
 			// 1実験の終わり。
-			exp++;
+			wholeCount++;
 		} // end of while(実験回数）
 			// すべての実験が終わった。
 			// データをファイルに書き込む
 			// 規定回数の実験が終わったら、平均値をファイルに書き出す
-		for (int i = 0; i < aveTable.length; i++) {
+		for (
+
+				int i = 0; i < aveTable.length; i++) {
 			for (int j = 0; j < aveTable[i].length; j++) {
 				pwAve.print(round(aveTable[i][j]) + "\t");
 			}
@@ -253,7 +275,7 @@ public class Main_Mar13 {
 		pwStat.println("size of population: " + POPSIZE);
 		pwStat.println("length  of genotype = " + CHeader.LENGTH);
 		pwStat.println("Generation = " + GEN);
-		pwStat.println("EXP =" + EXP);
+		pwStat.println("EXP =" + EXP + " needed " + wholeCount + "times.");
 		pwStat.println(memo);
 		// 集団の状態記録から、協力の持続期間について情報を得る。
 		pwStat.println("loop\tfirstGen\ttotalCoop\tmaxKeep");
@@ -312,66 +334,58 @@ public class Main_Mar13 {
 		double aveFirstGen = (double) sumFirstGen / (double) EXP;
 		double aveMaxKepp = (double) sumMaxKeep / (double) EXP;
 		double aveTotalCoop = (double) sumTotalCoop / (double) EXP;
-		pwStat.println("ave first gen =" + round(aveFirstGen) + "\nave max keep = " + round(aveMaxKepp)
-				+ "\nave total coop =  " + round(aveTotalCoop));
+		pwStat.println("ave first gen =" +
+
+				round(aveFirstGen) + "\nave max keep = " + round(aveMaxKepp) + "\nave total coop =  "
+				+ round(aveTotalCoop));
 		pwStat.println("min first gen of this exp  " + minFirstExp + "-th =" + minFirstGen + "\nmax keep of this exp  "
 				+ maxMaxExp + "-th = " + maxMaxKeep + "\nmax total coop  of this exp  " + maxTotalExp + "-th = "
 				+ maxTotalCoop);
-		// 最後に収束状況を調べて、状況ごとにその実験番号を出力しておく。
-		pwStat.print("協力と裏切りの両方:\t");
-		for (int i = 0; i < convergeRecord.length; i++) {
-			char c = convergeRecord[i];
-			if (c == 'B')
-				pwStat.print(i + ",");
-		}
-		pwStat.print("\n協力へ収束:\t");
-		for (int i = 0; i < convergeRecord.length; i++) {
-			char c = convergeRecord[i];
-			if (c == 'C')
-				pwStat.print(i + ",");
-		}
-		pwStat.print("\n裏切りへ収束:\t");
-		for (int i = 0; i < convergeRecord.length; i++) {
-			char c = convergeRecord[i];
-			if (c == 'D')
-				pwStat.print(i + ",");
-		}
-		pwStat.println();
-		// 最後の世代について遺伝子型と記憶領域のパターンを数える。
-
+		pwStat.println("1回実験あたり平均最大重複数　\n記憶領域 : " + averageInt(centMem));
+		pwStat.println("戦略領域 : " + averageInt(centGeno));
 		closeFiles();
+
 	}// end of main()
 
+	private static double averageInt(int[] in) {
+		double r = 0.0;
+		for (int i = 0; i < in.length; i++) {
+			r += in[i];
+		}
+		r = r / (double) in.length;
+		return r;
+	}
+
 	private static void overlapPrint(List<String> list, int[] count) {
-		//count[] を並べ直したいが、それに合わせてlist も並べ直す必要がある。
-		//並べ直した元の番号配列をとっておく
+		// count[] を並べ直したいが、それに合わせてlist も並べ直す必要がある。
+		// 並べ直した元の番号配列をとっておく
 		int[] numArray = new int[count.length];
-		//初期化
-		for(int i=0;i<numArray.length;i++) {
+		// 初期化
+		for (int i = 0; i < numArray.length; i++) {
 			numArray[i] = i;
 		}
-		//並べ替え
+		// 並べ替え
 		for (int i = 0; i < count.length - 1; i++) {
-            for (int j = count.length - 1; j > i; j--) {
-                if (count[j - 1] < count[j]) {
-                    // 入れ替え
-                    int tmp = count[j - 1];
-                    count[j - 1] = count[j];
-                    count[j] = tmp;
-                    //
-                    tmp = numArray[j-1];
-                    numArray[j-1] = numArray[j];
-                    numArray[j] = tmp;
-                }
-             }
-        }
+			for (int j = count.length - 1; j > i; j--) {
+				if (count[j - 1] < count[j]) {
+					// 入れ替え
+					int tmp = count[j - 1];
+					count[j - 1] = count[j];
+					count[j] = tmp;
+					//
+					tmp = numArray[j - 1];
+					numArray[j - 1] = numArray[j];
+					numArray[j] = tmp;
+				}
+			}
+		}
 		for (int i = 0; i < list.size(); i++) {
 			if (count[i] != 0) {
 				String str = list.get(numArray[i]);
 				pwOverlap.println(str + " : " + count[i]);
 			}
 		}
-	} //end of overlapPrint()
+	} // end of overlapPrint()
 
 	private static int[] overlapCount(List<String> list) {
 		int[] r = new int[POPSIZE];
