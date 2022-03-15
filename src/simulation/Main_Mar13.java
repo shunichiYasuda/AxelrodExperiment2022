@@ -16,15 +16,15 @@ import java.util.Random;
 public class Main_Mar13 {
 	static CPopulation pop;
 	static final int POPSIZE = 20;
-	static final int GEN = 400; // 世代数
-	static final int EXP = 100; // 収束した実験回数
+	static final int GEN = 50; // 世代数
+	static final int EXP = 20; // 収束した実験回数
 	static String dateName;// ファイルの先頭に付加する日時
 	static String timeStamp; // 実験記録につける日時秒。
 	// static String memo = "交叉確率平均10個体,突然変異：全遺伝子座5%"; //実験記録に付けるメモ
 	static String memo = "交叉確率平均1個体、突然変異2分の1の1箇所" + "\n収束した実験以外の記録も取りたい。"; // 実験記録に付けるメモ
 	// typeFile は個体の「タイプ（あまのじゃく、裏切り者、TFT、お人好し）」の数を記録
-	static File aveFile, typeFile, statFile;
-	static PrintWriter pwAve, pwType, pwStat;
+	static File aveFile, typeFile, statFile, overlapFile;
+	static PrintWriter pwAve, pwType, pwStat, pwOverlap;
 	// 親集団の染色体プール
 	static List<String> parentsChrom;
 	// 平均値を記録する2次元配列
@@ -190,6 +190,34 @@ public class Main_Mar13 {
 				gen++;
 			} // end of while ( gen < GEN ...世代の終わり。
 
+			// この実験では協力への収束があったか？裏切りへの収束はあったか？あるいは両方？
+			if (convergeFlag && convergeDefectFlag) {// 両方あった
+				convergeRecord[exp] = 'B';
+			} else {
+				if (convergeFlag) {
+					convergeRecord[exp] = 'C';
+				}
+				if (convergeDefectFlag) {
+					convergeRecord[exp] = 'D';
+				}
+			}
+			System.out.println(exp + ":\t収束状況 " + convergeRecord[exp]);
+			// 最後の世代について遺伝子型と記憶領域の記録をとっておく。
+			List<String> genoType = new ArrayList<String>();
+			List<String> memType = new ArrayList<String>();
+			for (int i = 0; i < POPSIZE; i++) {
+				genoType.add(i, String.valueOf(pop.member[i].chrom));
+				memType.add(i, String.valueOf(pop.member[i].memRec));
+			}
+			// メソッドから受け取るのは重複回数の配列だけでよい？
+			int[] overlapCount = new int[POPSIZE];
+			overlapCount = overlapCount(memType);
+			// 処理が長くなりそうなので結果は直接ファイルに書く。
+			// その処理
+			pwOverlap.println("-------------exp = " + exp + ":   "+convergeRecord[exp]+"-------------");
+			overlapPrint(memType, overlapCount);
+			// overlap が0でないものだけを出力
+
 			// すべての実験の記録をとる
 			// 平均値を平均値テーブルに保存,集団の状態記録をテーブルに保存、
 			// 行が世代、列が実験
@@ -205,18 +233,7 @@ public class Main_Mar13 {
 				}
 				pwType.println();
 			}
-			// この実験では協力への収束があったか？裏切りへの収束はあったか？あるいは両方？
-			if (convergeFlag && convergeDefectFlag) {// 両方あった
-				convergeRecord[exp] = 'B';
-			} else {
-				if (convergeFlag) {
-					convergeRecord[exp] = 'C';
-				}
-				if (convergeDefectFlag) {
-					convergeRecord[exp] = 'D';
-				}
-			}
-			System.out.println(exp + ":\t収束状況 " + convergeRecord[exp]);
+
 			// 次の実験のために集団を初期化
 			pop.initialize();
 			// 1実験の終わり。
@@ -300,25 +317,86 @@ public class Main_Mar13 {
 		pwStat.println("min first gen of this exp  " + minFirstExp + "-th =" + minFirstGen + "\nmax keep of this exp  "
 				+ maxMaxExp + "-th = " + maxMaxKeep + "\nmax total coop  of this exp  " + maxTotalExp + "-th = "
 				+ maxTotalCoop);
-		//最後に収束状況を調べて、状況ごとにその実験番号を出力しておく。
+		// 最後に収束状況を調べて、状況ごとにその実験番号を出力しておく。
 		pwStat.print("協力と裏切りの両方:\t");
-		for(int i=0;i<convergeRecord.length;i++) {
+		for (int i = 0; i < convergeRecord.length; i++) {
 			char c = convergeRecord[i];
-			if(c == 'B') pwStat.print(i+",");
+			if (c == 'B')
+				pwStat.print(i + ",");
 		}
 		pwStat.print("\n協力へ収束:\t");
-		for(int i=0;i<convergeRecord.length;i++) {
+		for (int i = 0; i < convergeRecord.length; i++) {
 			char c = convergeRecord[i];
-			if(c == 'C') pwStat.print(i+",");
+			if (c == 'C')
+				pwStat.print(i + ",");
 		}
 		pwStat.print("\n裏切りへ収束:\t");
-		for(int i=0;i<convergeRecord.length;i++) {
+		for (int i = 0; i < convergeRecord.length; i++) {
 			char c = convergeRecord[i];
-			if(c == 'D') pwStat.print(i+",");
+			if (c == 'D')
+				pwStat.print(i + ",");
 		}
 		pwStat.println();
+		// 最後の世代について遺伝子型と記憶領域のパターンを数える。
+
 		closeFiles();
 	}// end of main()
+
+	private static void overlapPrint(List<String> list, int[] count) {
+		//count[] を並べ直したいが、それに合わせてlist も並べ直す必要がある。
+		//並べ直した元の番号配列をとっておく
+		int[] numArray = new int[count.length];
+		//初期化
+		for(int i=0;i<numArray.length;i++) {
+			numArray[i] = i;
+		}
+		//並べ替え
+		
+		for(int i=0;i<count.length-1;i++) {
+			int tmp = count[i];
+			for(int j=i;j<count.length;j++) {
+				if(tmp < count[j]) {
+				count[i] = count[j];
+				count[j] = tmp;
+			}
+			}
+			
+		}
+		for (int i = 0; i < list.size(); i++) {
+			if (count[i] != 0) {
+				String str = list.get(i);
+				pwOverlap.println(str + " : " + count[i]);
+			}
+		}
+	}
+
+	private static int[] overlapCount(List<String> list) {
+		int[] r = new int[POPSIZE];
+		for (int i = 0; i < r.length; i++) {
+			r[i] = 1;// 自分自身もカウントしなければならないので。
+		}
+		// すでに「同じもの」と認識されたかどうかのフラグ
+		boolean[] checkFlag = new boolean[POPSIZE];
+		for (int i = 0; i < checkFlag.length; i++) {
+			checkFlag[i] = false;
+		}
+		// List の最初から
+		int p1 = 0;
+		while (p1 < list.size() - 1) {
+			String str = list.get(p1);
+			for (int m = (p1 + 1); m < list.size(); m++) {
+				String str2 = list.get(m);
+				if (str.equals(str2) && !checkFlag[m]) {
+					r[p1]++;
+					checkFlag[m] = true;
+					r[m] = 0;
+				}
+			}
+			p1++;
+		}
+		//
+		return r;
+	}
 
 	private static int all0Chrom() {
 		int r = 0;
@@ -550,16 +628,20 @@ public class Main_Mar13 {
 		typeFile = new File(dateName + "_Type.txt");
 		statFile = new File(dateName + "_stat.txt");
 		aveFile = new File(dateName + "_ave.txt");
+		overlapFile = new File(dateName + "_overlap.txt");
 		try {
 			FileWriter fw = new FileWriter(typeFile);
 			FileWriter fw2 = new FileWriter(statFile);
 			FileWriter fw3 = new FileWriter(aveFile);
+			FileWriter fw4 = new FileWriter(overlapFile);
 			BufferedWriter bw = new BufferedWriter(fw);
 			BufferedWriter bw2 = new BufferedWriter(fw2);
 			BufferedWriter bw3 = new BufferedWriter(fw3);
+			BufferedWriter bw4 = new BufferedWriter(fw4);
 			pwType = new PrintWriter(bw);
 			pwStat = new PrintWriter(bw2);
 			pwAve = new PrintWriter(bw3);
+			pwOverlap = new PrintWriter(bw4);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -570,6 +652,7 @@ public class Main_Mar13 {
 		pwType.close();
 		pwStat.close();
 		pwAve.close();
+		pwOverlap.close();
 	}
 
 	// 一点交叉メソッド
