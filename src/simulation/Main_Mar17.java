@@ -16,7 +16,7 @@ import java.util.Random;
 public class Main_Mar17 {
 	static CPopulation pop;
 	static final int POPSIZE = 50;
-	static final int GEN = 100; // 世代数
+	static final int GEN = 400; // 世代数
 	static final int EXP = 100; // 集めたい状況はしたの condition で決定
 	static String dateName;// ファイルの先頭に付加する日時
 	static String timeStamp; // 実験記録につける日時秒。
@@ -33,7 +33,7 @@ public class Main_Mar17 {
 	static int wholeCount;
 	// 集めたい状況
 	static char condition = 'N';
-	static String memo = "集めたい収束状況は  " + condition + "  である。"; // 実験記録に付けるメモ
+	static String memo = "交叉率100% の状態。集めたい収束状況は  " + condition + "  である。"; // 実験記録に付けるメモ
 //各実験の最後の世代における記憶領域と chrom の集中度を記録する。
 	static int[] centGeno = new int[EXP];
 	static int[] centMem = new int[EXP];
@@ -589,38 +589,17 @@ public class Main_Mar17 {
 	// 記憶パターンから TFT個体を見つけてカウントする
 	private static int countMemBasedTFT() {
 		int count = 0;
-		// TFT記憶パターンの正規表現
-		String pattern1 = new String("[01]0000[01]");
-		String pattern2 = new String("[01]0011[01]");
-		String pattern3 = new String("[01]1100[01]");
-		String pattern4 = new String("[01]1111[01]");
-		// チェック用フラグ
-		boolean p1, p2, p3, p4;
-		p1 = p2 = p3 = p4 = false;
-		boolean totalFlag = false;
+		// TFT記憶パターンの検出をもっと簡単にする。Mar19
 		// ともかくも1個体ずつ記憶配列をチェック。
 		for (int m = 0; m < POPSIZE; m++) {
-			char[] memory = pop.member[m].memRec;
-			String strMemory = new String(memory);
-			// 4つのパターンをチェックする。
-			if (strMemory.matches(pattern1))
-				p1 = true;
-			if (strMemory.matches(pattern2))
-				p2 = true;
-			if (strMemory.matches(pattern3))
-				p3 = true;
-			if (strMemory.matches(pattern4))
-				p4 = true;
-			// p1-p4 のどれかが true なら totalFlagがtrue;
-			// 条件が2つしか使えないので、
-			boolean p12 = p1 || p2;
-			boolean p34 = p3 || p4;
-			if (p12 || p34)
-				totalFlag = true;
-			// この記憶配列がいずれかのパターンにマッチしているなら染色体をチェックする。
-			if (totalFlag) {
+			char[] mem = pop.member[m].memRec;
+			String strMemory = String.valueOf(mem);
+			// *xxyyz z なので、1,2ビットが同じ、かつ 3，4ビットが同じ
+			boolean b12 = !different(mem[1], mem[2]);
+			boolean b34 = !different(mem[3], mem[4]);
+			if (b12 && b34) {
 				int point = Integer.parseInt(strMemory, 2);
-				char lastChar = memory[memory.length - 1];
+				char lastChar = mem[mem.length - 1];
 				char genChar = pop.member[m].strategicRec[point];
 				if (lastChar == genChar) {
 					count++;
@@ -692,9 +671,9 @@ public class Main_Mar17 {
 			// しかしクロスオーバーは染色体ごとにたかだか1回しかおこらないので平均的に1回の意味がわからない
 			// ここでの場合分けは個体数20のケースでしか行わない。
 			// if (bingo(10 /(double) POPSIZE) ) { // 個体数分の10の確率だから、各世代平均10個体
-			if (bingo(1.0 / (double) POPSIZE)) { // 個体数分の1確率だから、各世代平均1個体
+			//if (bingo(1.0 / (double) POPSIZE)) { // 個体数分の1確率だから、各世代平均1個体
 				// if(bingo(CHeader.mutProb)) {//これまでの実験に戻す
-				// if(bingo(1.0)) { //交叉確率100%
+				if(bingo(1.0)) { //交叉確率100%
 				int point = randSeed.nextInt(CHeader.LENGTH);
 				// まったく入れ替わらない・全部入れ替わるが起きるといやなので
 				while (point == 0 || point == CHeader.LENGTH - 1) {
