@@ -1,9 +1,9 @@
 package simulation;
 
 public class CHeader {
-	static int PRE= 3; //‹L‰¯‚µ‚Ä‚¢‚éƒQ[ƒ€‚Ì‰ñ”
-	static int MEM = PRE*2;//add Mar01 Main ‚Ìƒƒ\ƒbƒh‚Å‹L‰¯”z—ñ‚Ì’·‚³‚ª•K—v
-	static int LENGTH = (int)Math.pow(2.0, (double)PRE*2)+PRE*2; //õF‘Ì‚Ì’·‚³
-	public static final double crossProb = 0.25; //Œğ³Šm—¦
-	public static final double mutProb = 0.01; //“Ë‘R•ÏˆÙŠm—¦ Mar01
+	static int PRE= 3; //ï¿½Lï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½Qï¿½[ï¿½ï¿½ï¿½Ì‰ï¿½
+	static int MEM = PRE*2;//add Mar01 Main ï¿½Ìƒï¿½ï¿½\ï¿½bï¿½hï¿½Å‹Lï¿½ï¿½ï¿½zï¿½ï¿½Ì’ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Kï¿½v
+	static int LENGTH = (int)Math.pow(2.0, (double)PRE*2)+PRE*2; //ï¿½ï¿½ï¿½Fï¿½Ì‚Ì’ï¿½ï¿½ï¿½
+	public static final double crossProb = 0.25; //ï¿½ï¿½ï¿½ï¿½ï¿½mï¿½ï¿½
+	public static final double mutProb = 0.01; //çªç„¶å¤‰ç•°ç¢ºç‡
 }
