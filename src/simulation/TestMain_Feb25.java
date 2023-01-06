@@ -14,23 +14,23 @@ import java.util.Random;
 public class TestMain_Feb25 {
 	static CPopulation pop;
 	static final int POPSIZE = 20;
-	static final int GEN = 50; // ¢‘ã”
-	static final int LOOP = 1; // ÀŒ±‰ñ”
-	static String dateName;// ƒtƒ@ƒCƒ‹‚Ìæ“ª‚É•t‰Á‚·‚é“ú
-	static String timeStamp; // ÀŒ±‹L˜^‚É‚Â‚¯‚é“ú•bB
+	static final int GEN = 50; // ï¿½ï¿½ï¿½ã”
+	static final int LOOP = 1; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	static String dateName;// ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½Ìæ“ªï¿½É•tï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	static String timeStamp; // ï¿½ï¿½ï¿½ï¿½ï¿½Lï¿½^ï¿½É‚Â‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½bï¿½B
 	static File aveFile, memFile, statFile;
 	static PrintWriter pwAve, pwGType, pwStat;
-	// eW’c‚ÌõF‘Ìƒv[ƒ‹
+	// ï¿½eï¿½Wï¿½cï¿½Ìï¿½ï¿½Fï¿½Ìƒvï¿½[ï¿½ï¿½
 	static List<String> parentsChrom;
 
 	public static void main(String[] args) {
-		// ‹L˜^ƒtƒ@ƒCƒ‹‚Ì€”õ
+		// ï¿½Lï¿½^ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½Ìï¿½ï¿½ï¿½
 		makeDate();
 		makeFiles();
-		// ÀŒ±‰ñ”‚ÌƒCƒ“ƒfƒbƒNƒX
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ñ”‚ÌƒCï¿½ï¿½ï¿½fï¿½bï¿½Nï¿½X
 		int exp = 0;
 		while (exp < LOOP) {
-			// W’c‚Ì¶¬
+			// ï¿½Wï¿½cï¿½Ìï¿½ï¿½ï¿½
 			pop = new CPopulation(POPSIZE);
 //			//check
 //			System.out.println("----------------before game ----------------------");
@@ -38,10 +38,10 @@ public class TestMain_Feb25 {
 //				printRec(pop.member[i].chrom);
 //				System.out.println();
 //			}
-			// ¢‘ã”‚ÌƒCƒ“ƒfƒbƒNƒX
+			// ï¿½ï¿½ï¿½ã”ï¿½ÌƒCï¿½ï¿½ï¿½fï¿½bï¿½Nï¿½X
 			int gen = 0;
 			while (gen < GEN) {
-				// ‘“–‚½‚èí
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 				int p1 = 0;
 				while (p1 < POPSIZE - 1) {
 					for (int m = (p1 + 1); m < POPSIZE; m++) {
@@ -50,75 +50,77 @@ public class TestMain_Feb25 {
 					}
 					p1++;
 				}
-				// W’c‚Ì•½‹Ï—˜“¾“™“Œv’l‚ğŒvZ‚·‚éB
+				// ï¿½Wï¿½cï¿½Ì•ï¿½ï¿½Ï—ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½vï¿½lï¿½ï¿½ï¿½vï¿½Zï¿½ï¿½ï¿½ï¿½B
 				pop.calcStat();
-				// ‘“–‚½‚èíƒQ[ƒ€‚ªI‚í‚Á‚½‚Ì‚Å
-				// ‚Ü‚½AƒXƒP[ƒŠƒ“ƒO‚ğs‚¤BƒXƒP[ƒŠƒ“ƒO‚Ís‚í‚È‚¢BFeb26
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Qï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì‚ï¿½
+				// ï¿½Ü‚ï¿½ï¿½Aï¿½Xï¿½Pï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½sï¿½ï¿½ï¿½Bï¿½Xï¿½Pï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½Ísï¿½ï¿½È‚ï¿½ï¿½BFeb26
 				// pop.scaling();
-				// scaling payoff ‚ÉŠî‚Ã‚¢‚Ä parents ƒŠƒXƒg‚ğì‚éB
-				// eƒŠƒXƒgB
+				// scaling payoff ï¿½ÉŠï¿½Ã‚ï¿½ï¿½ï¿½ parents ï¿½ï¿½ï¿½Xï¿½gï¿½ï¿½ï¿½ï¿½ï¿½B
+				// ï¿½eï¿½ï¿½ï¿½Xï¿½gï¿½B
+				System.out.println(pop.mAve);
+				
 				List<Integer> parentsList = new ArrayList<Integer>();
-				// e‚ğì‚éƒƒ\ƒbƒhBe‚Ì”‚ª‹ô”‚É‚È‚é‚æ‚¤‚É List ‚ğì¬‚·‚é
+				// ï¿½eï¿½ï¿½ï¿½ï¿½éƒï¿½\ï¿½bï¿½hï¿½Bï¿½eï¿½Ìï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É‚È‚ï¿½æ‚¤ï¿½ï¿½ List ï¿½ï¿½ï¿½ì¬ï¿½ï¿½ï¿½ï¿½
 				makeParents(parentsList);
-				// e‚ÌƒŠƒXƒg‚ª‚Å‚«‚½‚Ì‚ÅƒyƒAƒŠƒ“ƒO‚ğs‚¤
-				// ‚¢‚Á‚½‚ñe”Ô†‚ğƒ‰ƒ“ƒ_ƒ€‚É“ü‚ê‘Ö‚¦‚éB
+				// ï¿½eï¿½Ìƒï¿½ï¿½Xï¿½gï¿½ï¿½ï¿½Å‚ï¿½ï¿½ï¿½ï¿½Ì‚Åƒyï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½Oï¿½ï¿½ï¿½sï¿½ï¿½
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½eï¿½Ôï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½_ï¿½ï¿½ï¿½É“ï¿½ï¿½ï¿½Ö‚ï¿½ï¿½ï¿½B
 				Collections.shuffle(parentsList);
-				// W’c“à‚Åchrom‚ªã‘‚«‚³‚ê‚È‚¢‚æ‚¤‚ÉeW’c‚ÌõF‘Ìƒv[ƒ‹‚ğì‚Á‚Ä‚¨‚­B
-				// ‚ß‚ñ‚Ç‚­‚³‚¢‚Ì‚ÅList‚Æ‚µ‚Äì¬
+				// ï¿½Wï¿½cï¿½ï¿½ï¿½ï¿½chromï¿½ï¿½ï¿½ã‘ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È‚ï¿½ï¿½æ‚¤ï¿½Éeï¿½Wï¿½cï¿½Ìï¿½ï¿½Fï¿½Ìƒvï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½B
+				// ï¿½ß‚ï¿½Ç‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì‚ï¿½Listï¿½Æ‚ï¿½ï¿½Äì¬
 				parentsChrom = new ArrayList<String>();
 				for (int m : parentsList) {
 					String tmp = new String(pop.member[m].chrom);
 					parentsChrom.add(tmp);
 				}
 
-				// check “Ë‘R•ÏˆÙ‚ÆƒNƒƒXƒI[ƒo[‘O‚ÌõF‘Ì
+				// check ï¿½Ë‘Rï¿½ÏˆÙ‚ÆƒNï¿½ï¿½ï¿½Xï¿½Iï¿½[ï¿½oï¿½[ï¿½Oï¿½Ìï¿½ï¿½Fï¿½ï¿½
 				System.out.println("-------before crossover-------");
 				for (String s : parentsChrom) {
 					System.out.println(s);
 				}
-				// “Ë‘R•ÏˆÙBŒğ³‚Ì‘O‚ÉeW’c‘S‘Ì‚É“Ë‘R•ÏˆÙˆ—‚ğs‚Á‚Ä‚¨‚­B
-				// ‚±‚±‚ÅGA‰ß’ö‚Ì‘ÎÛ‚ğeW’c‚ÌõF‘Ìƒv[ƒ‹‚ÉŒÀ’è‚µ‚Ä‚¨‚­ Feb26
-				// ‚µ‚½‚ª‚Á‚Ämutation,crossover ‚ÌƒR[ƒh‚ğ‘O–Ê‘‚«Š·‚¦
+				// ï¿½Ë‘Rï¿½ÏˆÙBï¿½ï¿½ï¿½ï¿½ï¿½Ì‘Oï¿½Éeï¿½Wï¿½cï¿½Sï¿½Ì‚É“Ë‘Rï¿½ÏˆÙï¿½ï¿½ï¿½ï¿½ï¿½ï¿½sï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½B
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½GAï¿½ß’ï¿½ï¿½Ì‘ÎÛ‚ï¿½eï¿½Wï¿½cï¿½Ìï¿½ï¿½Fï¿½Ìƒvï¿½[ï¿½ï¿½ï¿½ÉŒï¿½ï¿½è‚µï¿½Ä‚ï¿½ï¿½ï¿½ Feb26
+				// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½mutation,crossover ï¿½ÌƒRï¿½[ï¿½hï¿½ï¿½Oï¿½Êï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 				mutation();
-				// ƒNƒƒXƒI[ƒo[
+				// ï¿½Nï¿½ï¿½ï¿½Xï¿½Iï¿½[ï¿½oï¿½[
 				crossover();
-				// “Ë‘R•ÏˆÙ‚ÆƒNƒƒXƒI[ƒo[ŒãB
+				// ï¿½Ë‘Rï¿½ÏˆÙ‚ÆƒNï¿½ï¿½ï¿½Xï¿½Iï¿½[ï¿½oï¿½[ï¿½ï¿½B
 				System.out.println("------after crossover-------");
 				for (String s : parentsChrom) {
 					System.out.println(s);
 				}
-				// ’u‚«Š·‚¦‚ç‚ê‚½õF‘Ì‚Å‚ ‚ç‚½‚ÈŒÂ‘Ì‚ğì‚é.
-				// pop.member ‚ÌõF‘Ì‚ğã‘‚«‚·‚éBeW’c‚ÌõF‘Ìƒv[ƒ‹‚ğì‚Á‚Ä‚ ‚é‚Ì‚ÅA’Pƒ‚É
-				//“ª‚©‚ç menber.chrom ‚ğ’u‚«Š·‚¦‚éB
+				// ï¿½uï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ê‚½ï¿½ï¿½ï¿½Fï¿½Ì‚Å‚ï¿½ï¿½ç‚½ï¿½ÈŒÂ‘Ì‚ï¿½ï¿½ï¿½ï¿½.
+				// pop.member ï¿½Ìï¿½ï¿½Fï¿½Ì‚ï¿½ï¿½ã‘ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Bï¿½eï¿½Wï¿½cï¿½Ìï¿½ï¿½Fï¿½Ìƒvï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½Ì‚ÅAï¿½Pï¿½ï¿½ï¿½ï¿½
+				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ menber.chrom ï¿½ï¿½uï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½B
 				for(int m=0;m<POPSIZE;m++) {
 					char[] tmp = parentsChrom.get(m).toCharArray();
 					pop.member[m].replace(tmp);
 				}
 				gen++;
-			} // ¢‘ãƒ‹[ƒv‚ÌI‚í‚èB
+			} // ï¿½ï¿½ï¿½ãƒ‹ï¿½[ï¿½vï¿½ÌIï¿½ï¿½ï¿½B
 			exp++;
-		} // ÀŒ±ƒ‹[ƒv‚ÌI‚í‚è
+		} // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½[ï¿½vï¿½ÌIï¿½ï¿½ï¿½
 
 	}
 
-	// “ú•t‚©‚çƒtƒ@ƒCƒ‹–¼‚ğ‚Â‚­‚é‚Ì‚ÅB
+	// ï¿½ï¿½ï¿½tï¿½ï¿½ï¿½ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â‚ï¿½ï¿½ï¿½Ì‚ÅB
 	static void makeDate() {
-		// ‹L˜^—pƒtƒ@ƒCƒ‹‚Ì‚½‚ß‚Ì“ú•tæ“¾
+		// ï¿½Lï¿½^ï¿½pï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½Ì‚ï¿½ï¿½ß‚Ì“ï¿½ï¿½tï¿½æ“¾
 		Calendar cal1 = Calendar.getInstance();
-		int year = cal1.get(Calendar.YEAR); // Œ»İ‚Ì”N‚ğæ“¾
-		int month = cal1.get(Calendar.MONTH); // Œ»İ‚ÌŒ”-1‚ğæ“¾
+		int year = cal1.get(Calendar.YEAR); // ï¿½ï¿½ï¿½İ‚Ì”Nï¿½ï¿½ï¿½æ“¾
+		int month = cal1.get(Calendar.MONTH); // ï¿½ï¿½ï¿½İ‚ÌŒï¿½ï¿½ï¿½-1ï¿½ï¿½ï¿½æ“¾
 		int day = cal1.get(Calendar.DATE);
-		int hour = cal1.get(Calendar.HOUR_OF_DAY); // Œ»İ‚Ì‚ğæ“¾
-		int minute = cal1.get(Calendar.MINUTE); // Œ»İ‚Ì•ª‚ğæ“¾
-		int second = cal1.get(Calendar.SECOND); // Œ»İ‚Ì•b‚ğæ“¾
-		String[] monthArray = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jly", "Aug", "Sep", "Oct", "Nov", "Dec" }; // Œ•\¦‚ğŒ©‚â‚·‚­‚·‚é‚½‚ß
+		int hour = cal1.get(Calendar.HOUR_OF_DAY); // ï¿½ï¿½ï¿½İ‚Ìï¿½ï¿½ï¿½ï¿½æ“¾
+		int minute = cal1.get(Calendar.MINUTE); // ï¿½ï¿½ï¿½İ‚Ì•ï¿½ï¿½ï¿½ï¿½æ“¾
+		int second = cal1.get(Calendar.SECOND); // ï¿½ï¿½ï¿½İ‚Ì•bï¿½ï¿½ï¿½æ“¾
+		String[] monthArray = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jly", "Aug", "Sep", "Oct", "Nov", "Dec" }; // ï¿½ï¿½ï¿½\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â‚·ï¿½ï¿½ï¿½ï¿½ï¿½é‚½ï¿½ï¿½
 		dateName = new String(monthArray[month] + day + "_" + year);
 		timeStamp = new String(dateName + ":" + hour + ":" + minute + ":" + second);
 	}
 
-	// ƒtƒ@ƒCƒ‹ì¬ƒƒ\ƒbƒh
+	// ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½ì¬ï¿½ï¿½ï¿½\ï¿½bï¿½h
 	private static void makeFiles() {
-		// ‹L˜^ƒtƒ@ƒCƒ‹‚Ì€”õ
+		// ï¿½Lï¿½^ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½Ìï¿½ï¿½ï¿½
 		memFile = new File(dateName + "_GType.txt");
 		statFile = new File(dateName + "_stat.txt");
 		aveFile = new File(dateName + "_ave.txt");
@@ -138,18 +140,18 @@ public class TestMain_Feb25 {
 		}
 	}
 
-	// ƒtƒ@ƒCƒ‹ƒNƒ[ƒY
+	// ï¿½tï¿½@ï¿½Cï¿½ï¿½ï¿½Nï¿½ï¿½ï¿½[ï¿½Y
 	static void closeFiles() {
 		pwGType.close();
 		pwStat.close();
 		pwAve.close();
 	}
 
-	// ˆê“_Œğ³ƒƒ\ƒbƒh
-	// eW’c‚ÌõF‘Ìƒv[ƒ‹‚É‘Î‚µ‚Äs‚¤‚Ì‚ÅAparentsList ‚ª‚¢‚ç‚È‚¢B
-	//ƒƒ\ƒbƒh‚ÌƒR[ƒh‘‚«Š·‚¦ Feb26
+	// ï¿½ï¿½_ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½bï¿½h
+	// ï¿½eï¿½Wï¿½cï¿½Ìï¿½ï¿½Fï¿½Ìƒvï¿½[ï¿½ï¿½ï¿½É‘Î‚ï¿½ï¿½Äsï¿½ï¿½ï¿½Ì‚ÅAparentsList ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È‚ï¿½ï¿½B
+	//ï¿½ï¿½ï¿½\ï¿½bï¿½hï¿½ÌƒRï¿½[ï¿½hï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Feb26
 	private static void crossover() {
-		// eƒŠƒXƒg‚Í‹ô”‚È‚Ì‚ÅA‘O‚©‚ç“ñ‚Â‚¸‚ÂƒyƒAƒŠƒ“ƒO
+		// ï¿½eï¿½ï¿½ï¿½Xï¿½gï¿½Í‹ï¿½ï¿½ï¿½ï¿½È‚Ì‚ÅAï¿½Oï¿½ï¿½ï¿½ï¿½ï¿½Â‚ï¿½ï¿½Âƒyï¿½Aï¿½ï¿½ï¿½ï¿½ï¿½O
 		for (int m = 0; m < parentsChrom.size() - 1; m += 2) {
 			char[]  parent1 = parentsChrom.get(m).toCharArray();
 			char[] parent2 = parentsChrom.get(m+1).toCharArray();
@@ -157,7 +159,7 @@ public class TestMain_Feb25 {
 			//
 			if (bingo(CHeader.crossProb)) {
 				int point = randSeed.nextInt(CHeader.LENGTH);
-				// ‚Ü‚Á‚½‚­“ü‚ê‘Ö‚í‚ç‚È‚¢E‘S•”“ü‚ê‘Ö‚í‚é‚ª‹N‚«‚é‚Æ‚¢‚â‚È‚Ì‚Å
+				// ï¿½Ü‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö‚ï¿½ï¿½È‚ï¿½ï¿½Eï¿½Sï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö‚ï¿½é‚ªï¿½Nï¿½ï¿½ï¿½ï¿½Æ‚ï¿½ï¿½ï¿½È‚Ì‚ï¿½
 				while (point == 0 || point == CHeader.LENGTH - 1) {
 					point = randSeed.nextInt(CHeader.LENGTH);
 				}
@@ -166,16 +168,16 @@ public class TestMain_Feb25 {
 					parent1[index] = parent2[index];
 					parent2[index] = tmp;
 				}
-			} // end of if(ƒNƒƒXƒI[ƒo[‚ªƒrƒ“ƒS
-			//ƒrƒ“ƒS‚µ‚æ‚¤‚ª‚µ‚Ü‚¢‚ª parent1‚ÍmAparent2‚Í m+1 ‚ÌêŠ‚Ö‘‚«–ß‚·B
+			} // end of if(ï¿½Nï¿½ï¿½ï¿½Xï¿½Iï¿½[ï¿½oï¿½[ï¿½ï¿½ï¿½rï¿½ï¿½ï¿½S
+			//ï¿½rï¿½ï¿½ï¿½Sï¿½ï¿½ï¿½æ‚¤ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½ï¿½ parent1ï¿½ï¿½mï¿½Aparent2ï¿½ï¿½ m+1 ï¿½ÌêŠï¿½Öï¿½ï¿½ï¿½ï¿½ß‚ï¿½ï¿½B
 			parentsChrom.set(m, new String(parent1));
 			parentsChrom.set(m+1, new String(parent2));
-		} // ƒNƒƒXƒI[ƒo[I‚í‚è
+		} // ï¿½Nï¿½ï¿½ï¿½Xï¿½Iï¿½[ï¿½oï¿½[ï¿½Iï¿½ï¿½ï¿½
 	}
 
-	// “Ë‘R•ÏˆÙƒƒ\ƒbƒh
+	// ï¿½Ë‘Rï¿½ÏˆÙƒï¿½ï¿½\ï¿½bï¿½h
 	private static void mutation() {
-		// parentsChrom ‚É‘Î‚µ‚Äˆ—‚ğ‚·‚éB
+		// parentsChrom ï¿½É‘Î‚ï¿½ï¿½Äï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½B
 		for (String s : parentsChrom) {
 			char[] tmp = s.toCharArray();
 			for (int i = 0; i < tmp.length; i++) {
@@ -186,19 +188,19 @@ public class TestMain_Feb25 {
 						tmp[i] = '1';
 					}
 				}
-			} //end of if(“Ë‘R•ÏˆÙ‚ªƒrƒ“ƒS
-		}//list ‚É‚ ‚é‚·‚×‚Ä‚ÌõF‘Ì‚É‚Â‚¢‚Ä“Ë‘R•ÏˆÙ‚ªI—¹B
+			} //end of if(ï¿½Ë‘Rï¿½ÏˆÙ‚ï¿½ï¿½rï¿½ï¿½ï¿½S
+		}//list ï¿½É‚ï¿½ï¿½é‚·ï¿½×‚Ä‚Ìï¿½ï¿½Fï¿½Ì‚É‚Â‚ï¿½ï¿½Ä“Ë‘Rï¿½ÏˆÙ‚ï¿½ï¿½Iï¿½ï¿½ï¿½B
 	} //end of mutation()
 
-	// e‚ğì‚éƒƒ\ƒbƒh
+	// ï¿½eï¿½ï¿½ï¿½ï¿½éƒï¿½\ï¿½bï¿½h
 	private static void makeParents(List<Integer> parentsList) {
-		// ƒ‹[ƒŒƒbƒg‚ğì‚éBpop ‚Ìƒƒ“ƒo‚·‚×‚Ä‚Ì scaled payoff ‚ğ‡ZB
+		// ï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½bï¿½gï¿½ï¿½ï¿½ï¿½ï¿½Bpop ï¿½Ìƒï¿½ï¿½ï¿½ï¿½oï¿½ï¿½ï¿½×‚Ä‚ï¿½ scaled payoff ï¿½ï¿½ï¿½ï¿½ï¿½Zï¿½B
 		double sum = 0.0;
 		for (int i = 0; i < POPSIZE; i++) {
 			sum += pop.member[i].getAvePayoff();
 		}
-		// ƒ‹[ƒŒƒbƒg‚Ì•
-		// ÏZ‚Ì‘ÎÛ‚É‚È‚é payoff ‚ğaverage payoff ‚É•ÏX Feb 26
+		// ï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½bï¿½gï¿½Ì•ï¿½
+		// ï¿½ÏZï¿½Ì‘ÎÛ‚É‚È‚ï¿½ payoff ï¿½ï¿½average payoff ï¿½É•ÏX Feb 26
 		double[] roulet = new double[POPSIZE];
 		roulet[0] = pop.member[0].getAvePayoff() / sum;
 		for (int m = 1; m < POPSIZE; m++) {
@@ -207,18 +209,18 @@ public class TestMain_Feb25 {
 		/*
 		 * for(int m=0;m<roulet.length;m++){ System.out.println("\t"+roulet[m]); }
 		 */
-		// ƒ‹[ƒŒƒbƒg‚ğ‰ñ‚µ‚ÄW’c‚Æ“¯‚¶ ”‚¾‚¯e‚ğ‘I‘ğ
+		// ï¿½ï¿½ï¿½[ï¿½ï¿½ï¿½bï¿½gï¿½ï¿½ï¿½ñ‚µ‚ÄWï¿½cï¿½Æ“ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½eï¿½ï¿½Iï¿½ï¿½
 		double border;
 		int p_index;
 		for (int i = 0; i < POPSIZE; i++) {
-			p_index = 0; // ‰Šú‰»‚ÌˆÊ’u‚É’ˆÓ
+			p_index = 0; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÌˆÊ’uï¿½É’ï¿½ï¿½ï¿½
 			border = Math.random();
 			while (roulet[p_index] < border)
 				p_index++;
 			parentsList.add(p_index);
 		}
 		// System.out.println("");
-		// e‚Ì”‚ªŠï”‚Å‚ ‚ê‚ÎŒğ”z‚Å‚«‚È‚¢‚Ì‚Å‚Ğ‚Æ‚Â‘I‚Ñ’¼‚·
+		// ï¿½eï¿½Ìï¿½ï¿½ï¿½ï¿½ï”ï¿½Å‚ï¿½ï¿½ï¿½ÎŒï¿½zï¿½Å‚ï¿½ï¿½È‚ï¿½ï¿½Ì‚Å‚Ğ‚Æ‚Â‘Iï¿½Ñ’ï¿½ï¿½ï¿½
 		if (parentsList.size() % 2 == 1) {
 			p_index = 0;
 			border = Math.random();
@@ -231,21 +233,21 @@ public class TestMain_Feb25 {
 	//
 	private static boolean bingo(double prob) {
 		boolean r = false;
-		// —”‚ğo‚µ‚ÄAŠm—¦ˆÈ‰º‚È‚çƒrƒ“ƒS
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½oï¿½ï¿½ï¿½ÄAï¿½mï¿½ï¿½ï¿½È‰ï¿½ï¿½È‚ï¿½rï¿½ï¿½ï¿½S
 		if (Math.random() < prob)
 			r = true;
 		return r;
 	}
 
 	//
-	static void game(int p1, int p2) { // ŒÂ‘Ì”Ô† p1,p2 ‚ÅƒQ[ƒ€‚ğs‚¤B
-		// ‚»‚ê‚¼‚ê‚ÌƒvƒŒƒCƒ„[‚Ìuèv
-		// ¶¬‚Ì‚É memory ‚ª‚Å‚«‚ÄA‚»‚Ì‚Æ‚«‚É adr ‚à choice ‚àŒˆ‚Ü‚Á‚Ä‚¢‚éB
-		// ƒQ[ƒ€‚Å‹L‰¯‚ªXV‚³‚ê‚é‚½‚Ñ‚É adr ‚à choice ‚àXV‚³‚ê‚Ä‚¢‚éB
+	static void game(int p1, int p2) { // ï¿½Â‘Ì”Ôï¿½ p1,p2 ï¿½ÅƒQï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½sï¿½ï¿½ï¿½B
+		// ï¿½ï¿½ï¿½ê‚¼ï¿½ï¿½Ìƒvï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½[ï¿½Ìuï¿½ï¿½v
+		// ï¿½ï¿½ï¿½ï¿½ï¿½Ìï¿½ï¿½ï¿½ memory ï¿½ï¿½ï¿½Å‚ï¿½ï¿½ÄAï¿½ï¿½ï¿½Ì‚Æ‚ï¿½ï¿½ï¿½ adr ï¿½ï¿½ choice ï¿½ï¿½ï¿½ï¿½ï¿½Ü‚ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½B
+		// ï¿½Qï¿½[ï¿½ï¿½ï¿½Å‹Lï¿½ï¿½ï¿½ï¿½ï¿½Xï¿½Vï¿½ï¿½ï¿½ï¿½é‚½ï¿½Ñ‚ï¿½ adr ï¿½ï¿½ choice ï¿½ï¿½ï¿½Xï¿½Vï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½B
 		char select_p1 = pop.member[p1].getChoice();
 		char select_p2 = pop.member[p2].getChoice();
 
-		// C ‚Í 0, D‚Í 1 ‚¢‚¸‚êchar ‚Å‚ ‚éB
+		// C ï¿½ï¿½ 0, Dï¿½ï¿½ 1 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½char ï¿½Å‚ï¿½ï¿½ï¿½B
 		if (select_p1 == '0' && select_p2 == '0') {
 			pop.member[p1].setPayoff(3.0);
 			pop.member[p2].setPayoff(3.0);
@@ -264,12 +266,12 @@ public class TestMain_Feb25 {
 		}
 		pop.member[p1].reMem(select_p2);
 		pop.member[p2].reMem(select_p1);
-		// ƒQ[ƒ€ƒJƒEƒ“ƒg‚ğ‘‚â‚·iC³FFeb19 2022 j
-		// ‰ºƒQ[ƒ€ƒJƒEƒ“ƒg‚ÍsetPayoff ‚ªŒÄ‚Î‚ê‚½Û‚É‚»‚Ì’†‚ÅƒJƒEƒ“ƒg‚ª‘‚¦‚é
+		// ï¿½Qï¿½[ï¿½ï¿½ï¿½Jï¿½Eï¿½ï¿½ï¿½gï¿½ğ‘‚â‚·ï¿½iï¿½Cï¿½ï¿½ï¿½FFeb19 2022 ï¿½j
+		// ï¿½ï¿½ï¿½Qï¿½[ï¿½ï¿½ï¿½Jï¿½Eï¿½ï¿½ï¿½gï¿½ï¿½setPayoff ï¿½ï¿½ï¿½Ä‚Î‚ê‚½ï¿½Û‚É‚ï¿½ï¿½Ì’ï¿½ï¿½ÅƒJï¿½Eï¿½ï¿½ï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 		// pop.member[p1].gameCount++;
 		// pop.member[p2].gameCount++;
 	}// end of game()
-		// x‰‡ƒƒ\ƒbƒh
+		// ï¿½xï¿½ï¿½ï¿½ï¿½ï¿½\ï¿½bï¿½h
 
 	private static void printRec(char[] in) {
 		for (int i = 0; i < in.length; i++) {
